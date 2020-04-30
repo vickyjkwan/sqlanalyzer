@@ -3,7 +3,6 @@ import boto3
 import datetime
 import logging
 import re
-import utils
 import time
 from pyspark.sql.functions import udf, array
 from pyspark.sql.types import ArrayType, StringType
@@ -199,13 +198,4 @@ def parsed_df(spark, run_date, work_group):
     fields_df = spark.read.json(fields_rdd)
 
     return fields_df
-
-def main(spark, run_time):
-
-    logging.basicConfig(level=logging.INFO)
-    run_date = run_time.split('T')[0]
-    fields_df = parsed_df(spark, run_date, work_group='primary')
-
-    #Write results to the data warehouse
-    utils.write_partitioned_result(spark, fields_df, "dwh_utils", "athena_column_queried_primary", "s3a://mapbox-emr/dwh/dwh_utils/athena_column_queried_primary_raw",["dt"],[run_date], None)
 
