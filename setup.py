@@ -8,4 +8,5 @@ setup(name='sqlanalyzer',
       author_email='vickyj.fan2016@gmail.com',
       license='MIT',
       packages=['sqlanalyzer'],
+      install_requires=['sqlparse==0.3.0'],
       zip_safe=False)
