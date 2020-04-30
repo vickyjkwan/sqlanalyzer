@@ -198,4 +198,3 @@ def parsed_df(spark, run_date, work_group):
     fields_df = spark.read.json(fields_rdd)
 
     return fields_df
-

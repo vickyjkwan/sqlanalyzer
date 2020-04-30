@@ -210,4 +210,3 @@ def get_all_scanned_cols(cte_queries, meta_cols):
         all_columns_scanned.extend(list(set(original_columns_list)))
 
     return all_columns_scanned
-
