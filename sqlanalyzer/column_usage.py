@@ -5,9 +5,11 @@ import logging
 import re
 import time
 from pyspark.sql.functions import udf, array
-from pyspark.sql.types import ArrayType, StringType
-from column_usage_util import format_query, parse_cte, get_all_scanned_cols
 from pyspark.sql import SQLContext
+from pyspark.sql.types import ArrayType, StringType
+from utils import format_query, parse_cte, get_all_scanned_cols
+import findspark
+findspark.init()
 
 
 def partition_mapping(partition_keys):
@@ -80,22 +82,25 @@ def get_db_fields(spark, s3, run_date):
     return db_df
 
 
-def get_query(s3, run_date, work_group):
+def stitch_partition_fields(part_keys_df, db_fields):
     """
-    Read query logs for work_group from json.
+    Merge partition keys with the original columns for database.tables.
     Args:
-        s3 (object): s3 boto3 resource object.
-        run_date (string): the date of job run.
-        work_group (string): the workgroup that queries were tagged by.
+        part_keys_df (spark dataframe): partition keys for each db.table.
+        db_fields (spark dataframe): columns for each db.table.
 
-    Return: 
-        query_json (json): query and execution details. 
+    Return:
+        db_with_partitions_df (spark dataframe): extended columns with partition key names for each db.table.
     """
-    query_obj = s3.Object('mapbox-emr', 'dwh/column_usage/athena_queries/{}_query_logs_{}.json'.format(work_group, run_date))
-    query_content = query_obj.get()['Body'].read().decode('utf-8')
-    query_json = json.loads(query_content)
+    part_mapping_udf = udf(lambda y: partition_mapping(y), ArrayType(StringType()))
+    partition_df = part_keys_df.select('db_table', part_mapping_udf('PartitionKeys').alias('partition_keys'))
 
-    return query_json
+    all_db = db_fields.join(partition_df, "db_table", how='left')
+
+    extension_udf = udf(lambda x: extension(x), ArrayType(StringType()))
+    db_with_partitions_df = all_db.select('db_table', extension_udf(array('column_list', 'partition_keys')).alias('all_columns'))
+
+    return db_with_partitions_df
 
 
 def match_queried_fields(query, db_fields, **kwargs):
@@ -137,64 +142,36 @@ def match_queried_fields(query, db_fields, **kwargs):
     return column_payload
 
 
-def stitch_partition_fields(part_keys_df, db_fields):
-    """
-    Merge partition keys with the original columns for database.tables.
-    Args:
-        part_keys_df (spark dataframe): partition keys for each db.table.
-        db_fields (spark dataframe): columns for each db.table.
-
-    Return:
-        db_with_partitions_df (spark dataframe): extended columns with partition key names for each db.table.
-    """
-    part_mapping_udf = udf(lambda y: partition_mapping(y), ArrayType(StringType()))
-    partition_df = part_keys_df.select('db_table', part_mapping_udf('PartitionKeys').alias('partition_keys'))
-
-    all_db = db_fields.join(partition_df, "db_table", how='left')
-
-    extension_udf = udf(lambda x: extension(x), ArrayType(StringType()))
-    db_with_partitions_df = all_db.select('db_table', extension_udf(array('column_list', 'partition_keys')).alias('all_columns'))
-
-    return db_with_partitions_df
-
-
-def parsed_df(spark, run_date, work_group):
+def main(spark, query_location):
     
     s3 = boto3.resource('s3')
 
-    logging.info('Getting all fields since last snapshot...')
-    db_fields = get_db_fields(spark, s3, run_date)
-    part_keys_df = get_partition_keys(spark)
-    db_with_partitions_df = stitch_partition_fields(part_keys_df, db_fields)
+    # logging.info('Getting all fields since last snapshot...')
+    # db_fields = get_db_fields(spark, s3, run_date)
+    # part_keys_df = get_partition_keys(spark)
+    # db_with_partitions_df = stitch_partition_fields(part_keys_df, db_fields)
 
-    logging.info('Getting all queries since last snapshot...')
-    query_logs = get_query(s3, run_date, work_group=work_group)
+    logging.info('Reading query...')
+    query = open('query.sql').read()
+    formatted_query = format_query(query)
+    cte_queries = parse_cte(formatted_query)
 
-    fields_rows = []
-    
-    for query in query_logs:
-        logging.info("Parsing query_id {}".format(query['athena_query_id']))
+    # fields_rows = []
+
+    # try:
+    #     fields_row = match_queried_fields(query, db_with_partitions_df)
+    #     fields_rows.extend(fields_row)
+    #     logging.info('successfully parsed query.')
         
-        if work_group == 'primary':
-            query_user = 'no user info'
-        elif work_group == 'mode':
-            if re.findall(r"\n-- (.*\})", query['query']) != []:
-                query_user = json.loads(re.findall(r"\n-- (.*\})", query['query'])[0])['user']
-            else:
-                query_user = 'no user info'
-
-        try:
-            fields_row = match_queried_fields(query['query'], db_with_partitions_df, athena_query_id=query['athena_query_id'], \
-                            execution_timestamp=query['query_submission_timestamp'], \
-                            work_group=query['work_group'], query_user=query_user)
-            fields_rows.extend(fields_row)
-            logging.info('successfully parsed query_id {}'.format(query['athena_query_id']))
-            
-        except:
-            logging.info("Failed to parse {}".format(query['athena_query_id']))
+    # except:
+    #     logging.info("Failed to parse query.")
         
-    sc = spark.sparkContext
-    fields_rdd = sc.parallelize(fields_rows)
-    fields_df = spark.read.json(fields_rdd)
+    # sc = spark.sparkContext
+    # fields_rdd = sc.parallelize(fields_rows)
+    # fields_df = spark.read.json(fields_rdd)
 
-    return fields_df
+    return cte_queries
+
+
+if __name__ == '__main__':
+    print(main(spark, 'query.sql'))
