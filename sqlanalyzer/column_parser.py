@@ -1,13 +1,14 @@
 import re
 import json
 import logging
-import datetime
+import json
+import boto3
 import pkg_resources
 pkg_resources.require("sqlparse==0.3.0")
 import sqlparse
 
 
-class Formatter:
+class Parser:
     
     def __init__(self, raw_query=""):
         self.raw_query = raw_query
@@ -215,3 +216,69 @@ class Formatter:
             all_columns_scanned.extend(list(set(original_columns_list)))
 
         return all_columns_scanned
+
+
+    def match_queried_fields(self, query, db_fields, **kwargs):
+        """
+        Match the query column with those registered on metastore.
+        Args:
+            query (string): the raw query.
+            db_fields (spark dataframe): dataframe containing column names.
+            **kargs: other metadata around query execution that needs to be populated to payload.
+
+        Return:
+            column_payload (json): the queried columns, table and db.
+        """
+        logging.info("Reading and formatting query...")
+        
+        formatted_query = self.format_query(query)
+        cte_queries = self.parse_cte(formatted_query)
+
+        logging.info("Mapping and retrieving columns from query...")
+        all_columns_scanned = self.get_all_scanned_cols(cte_queries, db_fields)
+        logging.info("All columns scanned in the query: {}.".format(all_columns_scanned))
+
+        column_payload = []
+        for column in all_columns_scanned:
+            try:
+                col_split = column.split('.')
+                db, table, col = col_split[0], col_split[1], col_split[2]
+                row_payload = dict()
+                row_payload["database_name"] = db
+                row_payload["table_name"] = table 
+                row_payload["column_name"] = col
+                for arg, value in kwargs.items():
+                    row_payload[arg] = value    
+
+                column_payload.append(row_payload)  
+            except:
+                pass
+
+        return column_payload
+
+
+def get_db_fields(s3, run_date):
+    obj_db = s3.Object('mapbox-emr', 'dwh/column_usage/athena_db_fields/db_fields_{}.json'.format(run_date))
+    file_db = obj_db.get()['Body'].read().decode('utf-8')
+    json_db = json.loads(file_db)
+    
+    return json_db
+
+
+def main(query_location, run_date):
+    
+    s3 = boto3.resource('s3')
+
+    logging.info('Getting all fields since last snapshot...')
+    db_fields = get_db_fields(s3, run_date)
+
+    logging.info('Reading query...')
+    query = open('query.sql').read()
+    formatter = Parser(query)
+    columns_queried = formatter.match_queried_fields(query, db_fields)
+
+    return columns_queried
+
+
+if __name__ == '__main__':
+    print(main('query.sql'))
