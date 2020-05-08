@@ -8,8 +8,6 @@ from pyspark.sql.functions import udf, array
 from pyspark.sql import SQLContext
 from pyspark.sql.types import ArrayType, StringType
 from utils import format_query, parse_cte, get_all_scanned_cols
-import findspark
-findspark.init()
 
 
 def partition_mapping(partition_keys):
@@ -142,7 +140,7 @@ def match_queried_fields(query, db_fields, **kwargs):
     return column_payload
 
 
-def main(spark, query_location):
+def main(query_location):
     
     s3 = boto3.resource('s3')
 
@@ -174,4 +172,4 @@ def main(spark, query_location):
 
 
 if __name__ == '__main__':
-    print(main(spark, 'query.sql'))
+    print(main('query.sql'))

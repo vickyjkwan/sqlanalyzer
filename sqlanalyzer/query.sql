@@ -11,9 +11,9 @@ WITH opportunity_to_name AS
     GROUP BY
     id,
     name
-),
+)
 
 SELECT
 *
 FROM
-arr_clean
+opportunity_to_name
