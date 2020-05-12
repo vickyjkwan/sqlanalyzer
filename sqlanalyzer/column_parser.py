@@ -103,7 +103,7 @@ class Parser:
                     table_name_mapping[table_name_line[0].rstrip(')|,')] = table_name_line[0].rstrip(')|,')
                     
                 elif len(table_name_line) > 1:
-                    table_name_mapping[table_name_line[1].rstrip(')|,')] = table_name_line[0].rstrip(')|,')
+                    table_name_mapping[table_name_line[-1].rstrip(')|,')] = table_name_line[0].rstrip(')|,')
 
         return table_name_mapping
 
@@ -189,7 +189,7 @@ class Parser:
         return list(set(original_columns_list))
             
 
-    def get_all_scanned_cols(self, cte_queries, meta_cols):
+    def _get_all_scanned_cols(self, cte_queries, meta_cols):
         """
         Get all scanned original columns.
         Args:
@@ -235,7 +235,7 @@ class Parser:
         cte_queries = self.parse_cte(formatted_query)
 
         logging.info("Mapping and retrieving columns from query...")
-        all_columns_scanned = self.get_all_scanned_cols(cte_queries, db_fields)
+        all_columns_scanned = self._get_all_scanned_cols(cte_queries, db_fields)
         logging.info("All columns scanned in the query: {}.".format(all_columns_scanned))
 
         column_payload = []

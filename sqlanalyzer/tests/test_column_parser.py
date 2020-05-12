@@ -37,4 +37,6 @@ def test_get_table_names(sample_query, formatter):
     assert table_name_mapping == {'sfdc_accounts': 'sfdc.accounts',
                                     'opportunity_to_name': 'opportunity_to_name'}
 
-                                    
+
+def test_match_queried_fields():
+    pass     
