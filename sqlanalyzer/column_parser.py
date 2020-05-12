@@ -82,7 +82,7 @@ class Parser:
         return cte_dict  
         
 
-    def _get_table_names(self, line_query):
+    def get_table_names(self, line_query):
         """
         Get all tables names mapping from a SQL query. 
         Args:
@@ -202,7 +202,7 @@ class Parser:
 
         for _,cte_query in cte_queries.items():
 
-            table_alias_mapping = self._get_table_names(cte_query.split('\n'))
+            table_alias_mapping = self.get_table_names(cte_query.split('\n'))
             variables = self._get_all_variables(cte_query)
             queried_columns = self._get_queried_columns(table_alias_mapping, meta_cols)
             if variables == []:

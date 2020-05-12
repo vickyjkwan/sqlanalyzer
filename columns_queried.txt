@@ -1,1 +1,1 @@
-[{"database_name": "sfdc", "table_name": "accounts", "column_name": "id"}, {"database_name": "sfdc", "table_name": "accounts", "column_name": "dt"}, {"database_name": "sfdc", "table_name": "accounts", "column_name": "name"}]
+[{"database_name": "sfdc", "table_name": "accounts", "column_name": "name"}, {"database_name": "sfdc", "table_name": "accounts", "column_name": "id"}, {"database_name": "sfdc", "table_name": "accounts", "column_name": "dt"}]
