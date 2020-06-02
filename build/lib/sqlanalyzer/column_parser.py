@@ -43,26 +43,23 @@ class Parser:
         for pos in cte.finditer(query):
             pos_list.append(pos.start())
         
+        cte_main = re.compile(r"(SELECT)")
+        pos_list_main = []
+        for pos in cte_main.finditer(query):
+            pos_list_main.append(pos.start())
+           
+        
         if pos_list != []:
             cte_dict = {}
-            for index, pos in enumerate(pos_list):
-                if index == len(pos_list)-1:
+            for _, pos in enumerate(pos_list):
+                if pos < len(pos_list)-1:
                     cte_query = query[pos:]
-                    cte_name = 'main'
                 else:
-                    cte_query = query[pos : pos_list[index+1]]
-                    cte_name = re.findall(r"(WITH)*(.*)AS", cte_query)[0][1].strip(' ')
+                    cte_query = query[pos:pos_list_main[-1]]
+                cte_name = re.findall(r"(WITH)*(.*)AS", cte_query)[0][1].strip(' ')    
                 cte_dict[cte_name] = cte_query
-                
-            cte = re.compile(r"(SELECT)")
-            pos_list = []
-            for pos in cte.finditer(cte_dict['main']):
-                pos_list.append(pos.start())
-            last_cte = cte_dict.get('main')[:pos_list[1]]
-            
-            cte_name = re.findall(r"(WITH)*(.*)AS", last_cte)[0][1].strip(' ')
-            cte_dict[cte_name] = last_cte
-            cte_dict['main'] = cte_dict.get('main')[pos_list[1]:]
+
+            cte_dict['main'] = query[pos_list_main[-1]:]
             
         else:
             cte_dict = {}

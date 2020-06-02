@@ -48,12 +48,11 @@ class Parser:
         for pos in cte_main.finditer(query):
             pos_list_main.append(pos.start())
            
-        
         if pos_list != []:
             cte_dict = {}
-            for _, pos in enumerate(pos_list):
+            for index, pos in enumerate(pos_list):
                 if pos < len(pos_list)-1:
-                    cte_query = query[pos:]
+                    cte_query = query[pos:pos_list[index+1]]
                 else:
                     cte_query = query[pos:pos_list_main[-1]]
                 cte_name = re.findall(r"(WITH)*(.*)AS", cte_query)[0][1].strip(' ')    
