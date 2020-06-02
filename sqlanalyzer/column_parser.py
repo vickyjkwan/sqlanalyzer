@@ -51,7 +51,7 @@ class Parser:
         if pos_list != []:
             cte_dict = {}
             for index, pos in enumerate(pos_list):
-                if pos < len(pos_list)-1:
+                if index < len(pos_list)-1:
                     cte_query = query[pos:pos_list[index+1]]
                 else:
                     cte_query = query[pos:pos_list_main[-1]]
