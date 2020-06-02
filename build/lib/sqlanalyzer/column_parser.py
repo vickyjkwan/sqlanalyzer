@@ -56,7 +56,11 @@ class Parser:
                 else:
                     cte_query = query[pos:pos_list_main[-1]]
                 cte_name = re.findall(r"(WITH)*(.*)AS", cte_query)[0][1].strip(' ')    
-                cte_dict[cte_name] = cte_query
+                cte_removed = re.compile(r"\(SELECT")
+                pos_list = []
+                for pos in cte_removed.finditer(cte_query):
+                    pos_list.append(pos.start())
+                cte_dict[cte_name] = cte_query[pos_list[0]+1:]
 
             cte_dict['main'] = query[pos_list_main[-1]:]
             
