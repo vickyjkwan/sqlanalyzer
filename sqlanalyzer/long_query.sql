@@ -122,3 +122,24 @@ SELECT a.*,
        b.*
 FROM cleaned_list a
 LEFT JOIN mql_flag b ON a.event_email = b.email
+
+
+SELECT *
+FROM sfdc.accounts sfdc_accounts
+LEFT JOIN
+  (SELECT MAX(dt)
+   FROM
+     (SELECT dt
+      FROM sfdc.oppty) sfdc_oppty
+   LEFT JOIN
+     (SELECT dt
+      FROM sfdc.cases) ON sfdc_oppty.dt = sfdc_cases.dt) AS sfdc_cases ON sfdc_cases.dt = sfdc_accounts.dt
+WHERE dt > '2020-04-03' 
+
+
+SELECT MAX(dt)
+FROM (SELECT dt
+      FROM sfdc.oppty) sfdc_oppty
+      LEFT JOIN
+     (SELECT dt
+      FROM sfdc.cases) ON sfdc_oppty.dt = sfdc_cases.dt
