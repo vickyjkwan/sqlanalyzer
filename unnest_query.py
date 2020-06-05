@@ -16,8 +16,8 @@ def delevel_query(query_list):
             pos_where = i 
         if line.startswith('FROM'):
             pos_from = i-1
-        # if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
-        #     pos_join = i
+        if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
+            pos_join = i
   
     for line in query_list[:pos_from+2]:
         line_level.append((line, "level_1"))
@@ -42,10 +42,7 @@ def parse_sub_query(sub_query_list):
     formatted = formatter.format_query(sub_query)
     sub_query_list = formatted.split('\n')
 
-    query = "\n".join(sub_query_list).lstrip('\n').lstrip(' ').lstrip(r'\(')
-    query_list = query.split('\n')
-    
-    return query_list
+    return sub_query_list
 
 
 def has_child(sub_query_list):

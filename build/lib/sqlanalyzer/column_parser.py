@@ -118,10 +118,10 @@ class Parser:
         all_variables = []
 
         for e in query.split('\n'):
-            if sum(list(map(lambda x: '*' in x, re.findall(r"\s[*]?", query)))):
+            if sum(list(map(lambda x: '*' in x, re.findall(r"\s[*]?", e)))):
                 variable = []
             else:
-                variable = re.findall(r"[a-z_\s.]+", e.lstrip(' '))
+                variable = [x.strip(' ') for x in re.findall(r"[a-z_\s.]+", e)]
 
             all_variables.extend(variable)
 
@@ -263,7 +263,7 @@ class Parser:
 
 #     logging.info('Reading query...')
 #     query = open('query.sql').read()
-#     formatter = Parser(query)
+#     formatter = column_parser.Parser(query)
 #     columns_queried = formatter.match_queried_fields(query, db_fields)
 
 #     return columns_queried
