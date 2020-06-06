@@ -4,35 +4,6 @@ import sqlparse
 import re
 
 
-# def delevel_query(query_list):
-#     line_level = []
-#     sub_query = []
-#     pos_delete, pos_where = len(query_list), len(query_list)
-    
-#     for i, line in enumerate(query_list):
-#         if line.startswith('ORDER') or line.startswith('GROUP'):
-#             pos_delete = i
-#         if line.startswith('WHERE'):
-#             pos_where = i 
-#         if line.startswith('FROM'):
-#             pos_from = i-1
-#         if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
-#             pos_join = i
-  
-#     for line in query_list[:pos_from+2]:
-#         line_level.append((line, "level_1"))
-        
-#     for line in query_list[pos_from+1:pos_where]:
-#         if line.startswith(' ') or line.startswith('FROM'):
-#             sub_query.append(line[3:])
-#         else:
-#             line_level.append((line, "level_1"))
-
-#     for line in query_list[pos_where:pos_delete]:    
-#         line_level.append((line, "level_1"))
-
-#     return line_level, sub_query[1:]
-
 def delevel_query(query_list):
 
     sub_query = []
@@ -41,13 +12,15 @@ def delevel_query(query_list):
     for i, line in enumerate(query_list):
         if line.startswith('ORDER') or line.startswith('GROUP'):
             pos_delete.append(i)
-        if line.startswith('FROM'):
+        if line.startswith('FROM') and len(line.split(' ')) > 1:
+            print(line)
             pos_join.append(i)
+        elif line.startswith('FROM') and len(line.split(' ')) == 1:
+            pos_join.append(i+1)
         if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
             pos_join.append(i+1)
 
     pos_join.append(pos_delete[0])    
-
 
     sub_query = {}
     pos_join_list = iter(pos_join)
