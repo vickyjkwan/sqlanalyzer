@@ -13,7 +13,6 @@ def delevel_query(query_list):
         if line.startswith('ORDER') or line.startswith('GROUP'):
             pos_delete.append(i)
         if line.startswith('FROM') and len(line.split(' ')) > 1:
-            print(line)
             pos_join.append(i)
         elif line.startswith('FROM') and len(line.split(' ')) == 1:
             pos_join.append(i+1)
