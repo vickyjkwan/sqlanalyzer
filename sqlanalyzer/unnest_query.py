@@ -6,7 +6,6 @@ import re
 
 def delevel_query(query_list):
 
-    sub_query = []
     pos_delete = [len(query_list)-1]
     pos_join = []
     for i, line in enumerate(query_list):
