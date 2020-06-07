@@ -41,8 +41,11 @@ def get_alias_pos(query_list, pos_join, pos_where):
             end_pos = next(pos_join_list)-1
             alias_pos.append(pos_where - 1)
 
-        else:
+        elif pos_where == len(query_list):
             end_pos = pos_join[-1]
+            alias_pos.append(pos_where-1)
+        # else:
+        #     end_pos = pos_join[-1]
 
     alias_pos = list(set(alias_pos))
     return alias_pos
@@ -76,6 +79,16 @@ def parse_sub_query(query_list, sub_query_pos):
     return sub_query
 
 
+def delevel(query_list):
+
+    sub_query = {}
+    pos_join, pos_where = get_joins_pos(query_list)
+    alias_pos = get_alias_pos(query_list, pos_join, pos_where)
+    sub_query_pos = list(zip(pos_join[:-1], alias_pos))
+    sub_query = parse_sub_query(query_list, sub_query_pos)
+
+    return sub_query
+
 
 def main():
     query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
@@ -90,11 +103,7 @@ def main():
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
 
-    pos_join, pos_where = get_joins_pos(query_list_0)
-    sub_query = {}
-    alias_pos = get_alias_pos(query_list_0, pos_join, pos_where)
-    sub_query_pos = list(zip(pos_join[:-1], alias_pos))
-    sub_query = parse_sub_query(query_list_0, sub_query_pos)
+    sub_query = delevel(query_list_0)
 
     return sub_query
 
