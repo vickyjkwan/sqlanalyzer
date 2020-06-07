@@ -1,0 +1,11 @@
+digraph derived_query {
+	derived_query [label=derived_query]
+	sfdc_accounts [label=sfdc_accounts]
+	sfdc_cases_oppty [label=sfdc_cases_oppty]
+	sfdc_oppty [label=sfdc_oppty]
+	sfdc_cases [label=sfdc_cases]
+	derived_query -> sfdc_accounts [label="sfdc.accounts"]
+	derived_query -> sfdc_cases_oppty [label="sfdc.oppty, sfdc.cases"]
+	sfdc_cases_oppty -> sfdc_oppty [label="sfdc.oppty"]
+	sfdc_cases_oppty -> sfdc_cases [label="sfdc.cases"]
+}

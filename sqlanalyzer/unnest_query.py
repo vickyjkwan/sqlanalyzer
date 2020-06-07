@@ -6,7 +6,7 @@ import re
 
 def get_joins_pos(query_list):
 
-    pos_delete = [len(query_list)-1]
+    pos_delete, pos_where = [len(query_list)-1], len(query_list)
     pos_join = []
     for i, line in enumerate(query_list):
         if line.startswith('ORDER') or line.startswith('GROUP'):
@@ -40,12 +40,12 @@ def get_alias_pos(query_list, pos_join, pos_where):
         elif pos_join[-1] >= pos_where:
             end_pos = next(pos_join_list)-1
             alias_pos.append(pos_where - 1)
-
+        
         elif pos_where == len(query_list):
             end_pos = pos_join[-1]
             alias_pos.append(pos_where-1)
-        # else:
-        #     end_pos = pos_join[-1]
+#         else:
+#             end_pos = pos_join[-1]
 
     alias_pos = list(set(alias_pos))
     return alias_pos
@@ -74,7 +74,7 @@ def parse_sub_query(query_list, sub_query_pos):
             query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
             alias = alias.split(' ')[-1]
 
-        sub_query[alias] = ' '.join(query).lstrip(' \(')
+        sub_query[alias] = ' '.join(query).lstrip(' \(').lstrip(' FROM')
         
     return sub_query
 
@@ -90,6 +90,11 @@ def delevel(query_list):
     return sub_query
 
 
+def has_child(formatted_query):
+    
+    return delevel(formatted_query.split('\n')) != {}
+
+
 def main():
     query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
             sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
@@ -102,8 +107,18 @@ def main():
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
-
     sub_query = delevel(query_list_0)
+
+    for _, query in sub_query.items():
+        formatter = column_parser.Parser(query)
+        formatted_query = formatter.format_query(query)
+        query_list = formatted_query.split('\n')
+        if has_child(formatted_query):
+            sub_query_dict = delevel(query_list)
+            print(sub_query_dict)
+        else:
+            print("no subquery")
+
 
     return sub_query
 
