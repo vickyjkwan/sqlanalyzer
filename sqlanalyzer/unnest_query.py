@@ -4,7 +4,7 @@ import sqlparse
 import re
 
 
-def delevel_query(query_list):
+def get_joins_pos(query_list):
 
     pos_delete = [len(query_list)-1]
     pos_join = []
@@ -21,8 +21,10 @@ def delevel_query(query_list):
             pos_join.append(i+1)
 
     pos_join.append(min(pos_delete))
+    return pos_join, pos_where
 
-    sub_query = {}
+
+def get_alias_pos(query_list, pos_join, pos_where):
     pos_join_list = iter(pos_join)
     next(pos_join_list)
     alias_pos = []
@@ -43,20 +45,36 @@ def delevel_query(query_list):
             end_pos = pos_join[-1]
 
     alias_pos = list(set(alias_pos))
-    
-    sub_query = {}
+    return alias_pos
 
-    for j in alias_pos:
-        alias = query_list[j]
+
+def parse_sub_query(query_list, sub_query_pos):
+    sub_query = {}
+    for _, sub_pos in enumerate(sub_query_pos):
+        alias = query_list[sub_pos[1]]
+        query = query_list[sub_pos[0]: sub_pos[1]]
+
         try:
-            alias_index = alias.split(' ')[::-1].index('ON')
-            alias = alias.split(' ')[::-1][alias_index+1]
+            alias_list_rev = alias.split(' ')[::-1]
+            alias_index = alias_list_rev.index('ON')
+            alias = alias_list_rev[alias_index+1]
+
+            if alias_list_rev[alias_index+2] == 'AS':
+                del alias_list_rev[:alias_index+3]
+
+            else:
+                del alias_list_rev[:alias_index+2]
+
+            query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
+
         except:
+            query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
             alias = alias.split(' ')[-1]
 
-        sub_query[alias] = ' '.join(query_list[pos_join[i] : end_pos])
-            
+        sub_query[alias] = ' '.join(query).lstrip(' \(')
+        
     return sub_query
+
 
 
 def main():
@@ -72,7 +90,11 @@ def main():
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
 
-    sub_query = delevel_query(query_list_0)
+    pos_join, pos_where = get_joins_pos(query_list_0)
+    sub_query = {}
+    alias_pos = get_alias_pos(query_list_0, pos_join, pos_where)
+    sub_query_pos = list(zip(pos_join[:-1], alias_pos))
+    sub_query = parse_sub_query(query_list_0, sub_query_pos)
 
     return sub_query
 
