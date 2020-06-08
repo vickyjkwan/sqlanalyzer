@@ -44,10 +44,11 @@ def get_alias_pos(query_list, pos_join, pos_where):
         elif pos_where == len(query_list):
             end_pos = pos_join[-1]
             alias_pos.append(pos_where-1)
-#         else:
-#             end_pos = pos_join[-1]
+        else:
+            end_pos = pos_join[-1]
+            alias_pos.append(end_pos)
 
-    alias_pos = list(set(alias_pos))
+    alias_pos = sorted(list(set(alias_pos)))
     return alias_pos
 
 
@@ -59,16 +60,22 @@ def parse_sub_query(query_list, sub_query_pos):
 
         try:
             alias_list_rev = alias.split(' ')[::-1]
-            alias_index = alias_list_rev.index('ON')
-            alias = alias_list_rev[alias_index+1]
+            if alias_list_rev[0][-1] != ')':
+                alias_index = alias_list_rev.index('ON')
+                alias = alias_list_rev[alias_index+1]
 
-            if alias_list_rev[alias_index+2] == 'AS':
-                del alias_list_rev[:alias_index+3]
+                if alias_list_rev[alias_index+2] == 'AS':
+                    del alias_list_rev[:alias_index+3]
+
+                else:
+                    del alias_list_rev[:alias_index+2]
+
+                query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
 
             else:
-                del alias_list_rev[:alias_index+2]
-
-            query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
+                alias_list_rev[0] = alias_list_rev[0].rstrip('\)')
+                alias = 'none'
+                query.append(' '.join(alias_list_rev[::-1]))
 
         except:
             query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
@@ -96,31 +103,73 @@ def has_child(formatted_query):
 
 
 def main():
-    query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
-            sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
-            FROM sfdc.accounts sfdc_accounts
-            LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
-            AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
-            WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
-            """
+    # query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
+    #         sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
+    #         FROM sfdc.accounts sfdc_accounts
+    #         LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
+    #         AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
+    #         WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
+    #         """
+
+    query = """SELECT *
+   FROM
+     (SELECT a.*,
+             b.*,
+             c.*,
+             d.*
+      FROM
+        (SELECT DISTINCT anonymous_id,
+                         user_id
+         FROM mapbox_customer_data.segment_identifies
+         WHERE dt >= '2018-07-01'
+           AND anonymous_id IS NOT NULL
+           AND user_id IS NOT NULL ) a
+      LEFT JOIN
+        (SELECT id,
+                email,
+                created
+         FROM mapbox_customer_data.accounts
+         WHERE cast(dt AS DATE) = CURRENT_DATE - INTERVAL '1' DAY ) b ON a.user_id = b.id
+      LEFT JOIN
+        (SELECT anonymous_id AS anon_id_ad,
+                context_campaign_name,
+                min(TIMESTAMP) AS min_exposure
+         FROM mapbox_customer_data.segment_pages
+         WHERE dt >= '2018-07-01'
+           AND context_campaign_name IS NOT NULL
+         GROUP BY 1,
+                  2) c ON a.anonymous_id = c.anon_id_ad
+      LEFT JOIN
+        (SELECT DISTINCT anonymous_id AS anon_id_event,
+                         original_timestamp,
+                         event,
+                         context_traits_email
+         FROM mapbox_customer_data.segment_tracks
+         WHERE dt >= '2018-07-01'
+           AND event LIKE 'submitted_%form'
+           AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event)
+   WHERE context_campaign_name IS NOT NULL 
+    """
 
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
-    sub_query = delevel(query_list_0)
 
-    for _, query in sub_query.items():
+    query_dict = {}
+    sub_query = delevel(query_list_0)
+    query_dict['derived_query'] = sub_query
+
+    for alias, query in sub_query.items():
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
         query_list = formatted_query.split('\n')
         if has_child(formatted_query):
             sub_query_dict = delevel(query_list)
-            print(sub_query_dict)
+            query_dict['derived_query'][alias] = sub_query_dict
         else:
-            print("no subquery")
+            query_dict['derived_query'][alias] = {"no subquery"}
 
-
-    return sub_query
+    return query_dict
 
 
 if __name__ == '__main__':
