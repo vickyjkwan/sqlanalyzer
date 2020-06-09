@@ -73,15 +73,20 @@ def parse_sub_query(query_list, sub_query_pos):
                 query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
 
             else:
-                alias_list_rev[0] = alias_list_rev[0].rstrip(r'\)')
-                alias = 'none'
+                alias_list_rev[0] = alias_list_rev[0].rstrip('\)')
+                alias = 'no alias'
                 query.append(' '.join(alias_list_rev[::-1]))
 
         except:
             query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
             alias = alias.split(' ')[-1]
 
-        sub_query[alias] = ' '.join(query).lstrip(r' \(').lstrip(' FROM')
+        trans_query = ' '.join(query).lstrip(' \(').lstrip(' FROM')
+    
+        if trans_query == '':
+            sub_query = {}
+        else:
+            sub_query[alias] = trans_query
         
     return sub_query
 
@@ -99,7 +104,12 @@ def delevel(query_list):
 
 def has_child(formatted_query):
     
-    return delevel(formatted_query.split('\n')) != {}
+    count = 0
+    for k,v in delevel(formatted_query.split('\n')).items():
+        if v != {}: count += 1
+            
+    return count != 0
+
 
 
 def main():
