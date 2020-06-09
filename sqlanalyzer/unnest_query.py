@@ -2,6 +2,7 @@ from sqlanalyzer import column_parser
 import pandas as pd
 import sqlparse
 import re
+import json
 
 
 def get_joins_pos(query_list):
@@ -201,11 +202,20 @@ def main():
                         if has_child(formatted_query3):
                             sub_query_dict3 = delevel(query_list3)
                             sub_query_dict2[alias3] = sub_query_dict3
+                            
+                            for alias4, query4 in sub_query_dict3.items():
+                                formatter4 = column_parser.Parser(query4)
+                                formatted_query4 = formatter4.format_query(query4)
+                                query_list4 = formatted_query4.split('\n')
+                                if has_child(formatted_query4):
+                                    sub_query_dict4 = delevel(query_list4)
+                                    sub_query_dict3[alias4] = sub_query_dict4
+                                else:
+                                    pass
                         else:
                             pass
                 else:
                     pass
-                
         else:
             pass
 
@@ -214,4 +224,5 @@ def main():
 
 
 if __name__ == '__main__':
-    print(main())
+    print(json.dumps(main(), indent=2))
+    
