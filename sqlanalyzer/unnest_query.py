@@ -73,7 +73,7 @@ def parse_sub_query(query_list, sub_query_pos):
                 query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
 
             else:
-                alias_list_rev[0] = alias_list_rev[0].rstrip('\)')
+                alias_list_rev[0] = alias_list_rev[0].rstrip(r'\)')
                 alias = 'no alias'
                 query.append(' '.join(alias_list_rev[::-1]))
 
@@ -81,7 +81,7 @@ def parse_sub_query(query_list, sub_query_pos):
             query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
             alias = alias.split(' ')[-1]
 
-        trans_query = ' '.join(query).lstrip(' \(').lstrip(' FROM')
+        trans_query = ' '.join(query).lstrip(r' \(').lstrip(' FROM')
     
         if trans_query == '':
             sub_query = {}
@@ -105,7 +105,7 @@ def delevel(query_list):
 def has_child(formatted_query):
     
     count = 0
-    for k,v in delevel(formatted_query.split('\n')).items():
+    for _,v in delevel(formatted_query.split('\n')).items():
         if v != {}: count += 1
             
     return count != 0
@@ -113,18 +113,66 @@ def has_child(formatted_query):
 
 
 def main():
-    query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
-            sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
-            FROM sfdc.accounts sfdc_accounts
-            LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
-            AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
-            WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
-            """
+    # query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
+    #         sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
+    #         FROM sfdc.accounts sfdc_accounts
+    #         LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
+    #         AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
+    #         WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
+    #         """
+
+    query = """SELECT *
+                FROM
+                    (SELECT a.*,
+                            b.*,
+                            c.*,
+                            d.*
+                    FROM
+                        (SELECT DISTINCT anonymous_id,
+                                        user_id
+                        FROM mapbox_customer_data.segment_identifies
+                        WHERE dt >= '2018-07-01'
+                        AND anonymous_id IS NOT NULL
+                        AND user_id IS NOT NULL ) a
+                    LEFT JOIN
+                        (SELECT id,
+                                email,
+                                created
+                        FROM mapbox_customer_data.accounts
+                        WHERE cast(dt AS DATE) = CURRENT_DATE - INTERVAL '1' DAY ) b ON a.user_id = b.id
+                    LEFT JOIN
+                        (SELECT anonymous_id AS anon_id_ad,
+                                context_campaign_name,
+                                min(TIMESTAMP) AS min_exposure
+                        FROM mapbox_customer_data.segment_pages
+                        WHERE dt >= '2018-07-01'
+                        AND context_campaign_name IS NOT NULL
+                        GROUP BY 1,
+                                2) c ON a.anonymous_id = c.anon_id_ad
+                    LEFT JOIN
+                        (SELECT DISTINCT anonymous_id AS anon_id_event,
+                                        original_timestamp,
+                                        event,
+                                        context_traits_email
+                        FROM mapbox_customer_data.segment_tracks
+                        WHERE dt >= '2018-07-01'
+                        AND event LIKE 'submitted_%form'
+                        AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event
+                    LEFT JOIN
+                        (SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
+                sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner, sfdc_accounts.user_id
+                FROM sfdc.accounts sfdc_accounts
+                LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
+                AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
+                WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
+                        ) e ON e.user_id = a.user_id
+                        )
+                WHERE context_campaign_name IS NOT NULL 
+    """
 
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
-
     query_dict = {}
     sub_query = delevel(query_list_0)
     query_dict['derived_query'] = sub_query
@@ -136,8 +184,31 @@ def main():
         if has_child(formatted_query):
             sub_query_dict = delevel(query_list)
             query_dict['derived_query'][alias] = sub_query_dict
+            
+            for alias2, query2 in sub_query_dict.items():
+                formatter2 = column_parser.Parser(query2)
+                formatted_query2 = formatter2.format_query(query2)
+                query_list2 = formatted_query2.split('\n')
+                
+                if has_child(formatted_query2):
+                    sub_query_dict2 = delevel(query_list2)
+                    sub_query_dict[alias2] = sub_query_dict2
+                    
+                    for alias3, query3 in sub_query_dict2.items():
+                        formatter3 = column_parser.Parser(query3)
+                        formatted_query3 = formatter3.format_query(query3)
+                        query_list3 = formatted_query3.split('\n')
+                        if has_child(formatted_query3):
+                            sub_query_dict3 = delevel(query_list3)
+                            sub_query_dict2[alias3] = sub_query_dict3
+                        else:
+                            pass
+                else:
+                    pass
+                
         else:
-            query_dict['derived_query'][alias] = {"no subquery"}
+            pass
+
 
     return query_dict
 
