@@ -22,10 +22,12 @@ def get_joins_pos(query_list):
             pos_join.append(i+1)
 
     pos_join.append(min(pos_delete))
+
     return pos_join, pos_where
 
 
 def get_alias_pos(query_list, pos_join, pos_where):
+
     pos_join_list = iter(pos_join)
     next(pos_join_list)
     alias_pos = []
@@ -50,10 +52,12 @@ def get_alias_pos(query_list, pos_join, pos_where):
             alias_pos.append(end_pos)
 
     alias_pos = sorted(list(set(alias_pos)))
+
     return alias_pos
 
 
 def parse_sub_query(query_list, sub_query_pos):
+
     sub_query = {}
     for _, sub_pos in enumerate(sub_query_pos):
         alias = query_list[sub_pos[1]]
@@ -112,65 +116,9 @@ def has_child(formatted_query):
     return count != 0
 
 
-
 def main():
-    # query = """SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
-    #         sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner
-    #         FROM sfdc.accounts sfdc_accounts
-    #         LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
-    #         AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
-    #         WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
-    #         """
-
-    query = """SELECT *
-                FROM
-                    (SELECT a.*,
-                            b.*,
-                            c.*,
-                            d.*
-                    FROM
-                        (SELECT DISTINCT anonymous_id,
-                                        user_id
-                        FROM mapbox_customer_data.segment_identifies
-                        WHERE dt >= '2018-07-01'
-                        AND anonymous_id IS NOT NULL
-                        AND user_id IS NOT NULL ) a
-                    LEFT JOIN
-                        (SELECT id,
-                                email,
-                                created
-                        FROM mapbox_customer_data.accounts
-                        WHERE cast(dt AS DATE) = CURRENT_DATE - INTERVAL '1' DAY ) b ON a.user_id = b.id
-                    LEFT JOIN
-                        (SELECT anonymous_id AS anon_id_ad,
-                                context_campaign_name,
-                                min(TIMESTAMP) AS min_exposure
-                        FROM mapbox_customer_data.segment_pages
-                        WHERE dt >= '2018-07-01'
-                        AND context_campaign_name IS NOT NULL
-                        GROUP BY 1,
-                                2) c ON a.anonymous_id = c.anon_id_ad
-                    LEFT JOIN
-                        (SELECT DISTINCT anonymous_id AS anon_id_event,
-                                        original_timestamp,
-                                        event,
-                                        context_traits_email
-                        FROM mapbox_customer_data.segment_tracks
-                        WHERE dt >= '2018-07-01'
-                        AND event LIKE 'submitted_%form'
-                        AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event
-                    LEFT JOIN
-                        (SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
-                sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner, sfdc_accounts.user_id
-                FROM sfdc.accounts sfdc_accounts
-                LEFT JOIN (SELECT MAX(dt) FROM (SELECT dt FROM sfdc.oppty) sfdc_oppty LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) 
-                AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
-                WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
-                        ) e ON e.user_id = a.user_id
-                        )
-                WHERE context_campaign_name IS NOT NULL 
-    """
-
+    
+    query = open('query.sql').read()
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
@@ -219,10 +167,8 @@ def main():
         else:
             pass
 
-
     return query_dict
 
 
 if __name__ == '__main__':
     print(json.dumps(main(), indent=2))
-    
