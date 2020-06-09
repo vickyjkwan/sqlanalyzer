@@ -116,15 +116,15 @@ def has_child(formatted_query):
     return count != 0
 
 
-def main():
-    
-    query = open('query.sql').read()
+def main(query):
+
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list_0 = formatted_query.split('\n')
     query_dict = {}
     sub_query = delevel(query_list_0)
-    query_dict['derived_query'] = sub_query
+    # query_dict['derived_query'] = sub_query
+    query_dict= sub_query
 
     for alias, query in sub_query.items():
         formatter = column_parser.Parser(query)
@@ -132,8 +132,9 @@ def main():
         query_list = formatted_query.split('\n')
         if has_child(formatted_query):
             sub_query_dict = delevel(query_list)
-            query_dict['derived_query'][alias] = sub_query_dict
-            
+            # query_dict['derived_query'][alias] = sub_query_dict
+            query_dict[alias] = sub_query_dict
+
             for alias2, query2 in sub_query_dict.items():
                 formatter2 = column_parser.Parser(query2)
                 formatted_query2 = formatter2.format_query(query2)
@@ -170,5 +171,26 @@ def main():
     return query_dict
 
 
+def is_cte(query):
+    return query.startswith('WITH')
+
+
 if __name__ == '__main__':
-    print(json.dumps(main(), indent=2))
+    # query = open('query.sql').read()
+    # print(json.dumps(main(query), indent=2))
+
+    query = open('long_query.sql').read()
+    formatter = column_parser.Parser(query)
+    formatted_query = formatter.format_query(query)
+    query_list = formatted_query.split('\n')
+
+    if is_cte(formatted_query):
+        cte_dict = formatter.parse_cte(formatted_query)
+
+    for alias, query in cte_dict.items():
+        formatter = column_parser.Parser(query)
+        formatted_query = formatter.format_query(query)
+        try:
+            print(alias, '\n', json.dumps(main(query), indent=2), '\n\n\n')
+        except:
+            pass
