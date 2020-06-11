@@ -21,7 +21,10 @@ def get_joins_pos(query_list):
         if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
             pos_join.append(i+1)
 
-    pos_join.append(min(pos_delete))
+    if min(pos_delete) == len(query_list)-1:
+        pos_join.append(min(pos_delete))
+    else:
+        pass
 
     return pos_join, pos_where
 
