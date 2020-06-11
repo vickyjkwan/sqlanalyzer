@@ -106,7 +106,9 @@ def delevel(query_list):
     alias_pos = get_alias_pos(query_list, pos_join, pos_where)
     sub_query_pos = list(zip(pos_join[:-1], alias_pos))
     sub_query = parse_sub_query(query_list, sub_query_pos)
-
+    main_query_pos = main_query(query_list, sub_query_pos)
+    sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
+    
     return sub_query
 
 
@@ -117,6 +119,22 @@ def has_child(formatted_query):
         if v != {}: count += 1
             
     return count != 0
+
+
+def within(num, rng):
+    if num >= min(rng) and num <= max(rng): return 1
+    else: return 0
+
+    
+def main_query(query_list, sub_query_pos):
+    l = []
+    for i in range(len(query_list)): 
+        count = 0
+        for pair in sorted(sub_query_pos):
+            count += within(i, pair)
+        if count == 0:
+            l.append(i)
+    return l
 
 
 def main(query):
