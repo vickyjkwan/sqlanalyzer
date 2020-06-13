@@ -220,8 +220,6 @@ def is_cte(query):
 
 if __name__ == '__main__':
     # query = open('query.sql').read()
-    # print(json.dumps(main(query), indent=2))
-
     query = open('long_query.sql').read()
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
@@ -229,15 +227,19 @@ if __name__ == '__main__':
 
     if is_cte(formatted_query):
         cte_dict = formatter.parse_cte(formatted_query)
+        final_dict = {}
+        for alias, query in cte_dict.items():
+            formatter = column_parser.Parser(query)
+            formatted_query = formatter.format_query(query)
+            try:
+                final_dict[alias] = main(formatted_query)
+            except:
+                final_dict[alias] = formatted_query
 
-    final_dict = {}
-    for alias, query in cte_dict.items():
-        formatter = column_parser.Parser(query)
-        formatted_query = formatter.format_query(query)
-        try:
-            final_dict[alias] = main(formatted_query)
-        except:
-            final_dict[alias] = formatted_query
+        print(json.dumps(final_dict, indent=2), '\n\n\n')
 
-    print(json.dumps(final_dict, indent=2), '\n\n\n')
+    else:
+        print(json.dumps(main(query), indent=2))
+
+    
             
