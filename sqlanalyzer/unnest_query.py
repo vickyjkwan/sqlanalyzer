@@ -230,35 +230,14 @@ if __name__ == '__main__':
     if is_cte(formatted_query):
         cte_dict = formatter.parse_cte(formatted_query)
 
+    final_dict = {}
     for alias, query in cte_dict.items():
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
         try:
-            print(alias, '\n', json.dumps(main(query), indent=2), '\n\n\n')
+            final_dict[alias] = main(formatted_query)
         except:
-            pass
+            final_dict[alias] = formatted_query
 
-
-main 
- {
-  "no alias": {
-    "a": "SELECT DISTINCT anonymous_id,                    user_id    FROM mapbox_customer_data.segment_identifies    WHERE dt >= '2018-07-01'      AND anonymous_id IS NOT NULL AND user_id IS NOT NULL ",
-    "b": "SELECT id,           email,           created    FROM mapbox_customer_data.accounts WHERE cast(dt AS DATE) = CURRENT_DATE - INTERVAL '1' DAY ",
-    "c": "SELECT anonymous_id AS anon_id_ad,           context_campaign_name,           min(TIMESTAMP) AS min_exposure    FROM mapbox_customer_data.segment_pages    WHERE dt >= '2018-07-01'      AND context_campaign_name IS NOT NULL    GROUP BY 1, 2",
-    "d": "SELECT DISTINCT anonymous_id AS anon_id_event,                    original_timestamp,                    event,                    context_traits_email    FROM mapbox_customer_data.segment_tracks    WHERE dt >= '2018-07-01'      AND event LIKE 'submitted_%form' AND context_traits_email IS NOT NULL ",
-    "e": {
-      "sfdc_accounts": "sfdc.accounts",
-      "sfdc_cases_oppty": {
-        "no alias": {
-          "dt_owner": "SELECT DISTINCT dt FROM sfdc.owner AS sfdc_owner",
-          "main": "SELECT MAX(dt)\nFROM AS dt_owner ON sfdc_oppty.dt = sfdc_cases.dt"
-        },
-        "sfdc_cases": "SELECT dt FROM sfdc.cases",
-        "main": "SELECT MAX(dt)\nSELECT dt\nLEFT JOIN\nLEFT JOIN sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt"
-      },
-      "main": "SELECT sfdc_accounts.platform,\n       sfdc_accounts.mobile_os,\n       sfdc_accounts.service_metadata,\n       sfdc_cases.account,\n       sfdc_cases.num_requests,\n       sfdc_cases.owner,\n       sfdc_accounts.user_id\nLEFT JOIN\nWHERE sfdc_cases_oppty.dt > '2020-04-03'\n  AND sfdc_cases_oppty.dt < '2020-05-04'\nORDER BY 1\nGROUP BY 3\nLIMIT 20 AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt"
-    },
-    "main": "SELECT a.*,\n       b.*,\n       c.*,\n       d.*\nFROM\nLEFT JOIN\nLEFT JOIN\nLEFT JOIN\nLEFT JOIN b ON a.user_id = b.id\nc ON a.anonymous_id = c.anon_id_ad\nd ON a.anonymous_id = d.anon_id_event\ne ON e.user_id = a.user_id"
-  },
-  "main": "SELECT *\nFROM\nWHERE context_campaign_name IS NOT NULL "
-} 
+    print(json.dumps(final_dict, indent=2), '\n\n\n')
+            
