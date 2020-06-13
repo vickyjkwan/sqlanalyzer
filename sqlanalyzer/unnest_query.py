@@ -47,12 +47,16 @@ def get_alias_pos(query_list, pos_join, pos_where):
             end_pos = next(pos_join_list)-1
             alias_pos.append(pos_where - 1)
         
-        elif pos_where == len(query_list):
-            end_pos = pos_join[-1]
-            alias_pos.append(pos_where-1)
+#         elif pos_where == len(query_list):
+#             end_pos = pos_join[-1]
+#             alias_pos.append(pos_where-1)
+#         else:
+#             end_pos = pos_join[-1]
+#             alias_pos.append(end_pos)
+
         else:
             end_pos = pos_join[-1]
-            alias_pos.append(end_pos)
+            alias_pos.append(pos_where-1)
 
     alias_pos = sorted(list(set(alias_pos)))
 
@@ -104,10 +108,12 @@ def delevel(query_list):
     sub_query = {}
     pos_join, pos_where = get_joins_pos(query_list)
     alias_pos = get_alias_pos(query_list, pos_join, pos_where)
-    sub_query_pos = list(zip(pos_join[:-1], alias_pos))
+#     sub_query_pos = list(zip(pos_join[:-1], alias_pos))
+    sub_query_pos = list(zip(pos_join, alias_pos))
     sub_query = parse_sub_query(query_list, sub_query_pos)
     main_query_pos = main_query(query_list, sub_query_pos)
-    sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
+    if main_query_pos != []:
+        sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
     
     return sub_query
 
@@ -135,6 +141,7 @@ def main_query(query_list, sub_query_pos):
         if count == 0:
             l.append(i)
     return l
+        
 
 
 def main(query):
