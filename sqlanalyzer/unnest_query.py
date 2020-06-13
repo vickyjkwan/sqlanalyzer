@@ -47,13 +47,6 @@ def get_alias_pos(query_list, pos_join, pos_where):
             end_pos = next(pos_join_list)-1
             alias_pos.append(pos_where - 1)
         
-#         elif pos_where == len(query_list):
-#             end_pos = pos_join[-1]
-#             alias_pos.append(pos_where-1)
-#         else:
-#             end_pos = pos_join[-1]
-#             alias_pos.append(end_pos)
-
         else:
             end_pos = pos_join[-1]
             alias_pos.append(pos_where-1)
@@ -66,6 +59,7 @@ def get_alias_pos(query_list, pos_join, pos_where):
 def parse_sub_query(query_list, sub_query_pos):
 
     sub_query = {}
+    keep = []
     for _, sub_pos in enumerate(sub_query_pos):
         alias = query_list[sub_pos[1]]
         query = query_list[sub_pos[0]: sub_pos[1]]
@@ -77,9 +71,11 @@ def parse_sub_query(query_list, sub_query_pos):
                 alias = alias_list_rev[alias_index+1]
 
                 if alias_list_rev[alias_index+2] == 'AS':
+                    keep.append(' '.join(alias_list_rev[:alias_index+3][::-1]))
                     del alias_list_rev[:alias_index+3]
 
                 else:
+                    keep.append(' '.join(alias_list_rev[:alias_index+2][::-1]))
                     del alias_list_rev[:alias_index+2]
 
                 query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
@@ -100,7 +96,7 @@ def parse_sub_query(query_list, sub_query_pos):
         else:
             sub_query[alias] = trans_query
         
-    return sub_query
+    return sub_query, keep
 
 
 def delevel(query_list):
@@ -108,12 +104,12 @@ def delevel(query_list):
     sub_query = {}
     pos_join, pos_where = get_joins_pos(query_list)
     alias_pos = get_alias_pos(query_list, pos_join, pos_where)
-#     sub_query_pos = list(zip(pos_join[:-1], alias_pos))
     sub_query_pos = list(zip(pos_join, alias_pos))
-    sub_query = parse_sub_query(query_list, sub_query_pos)
+    sub_query, keep = parse_sub_query(query_list, sub_query_pos)
     main_query_pos = main_query(query_list, sub_query_pos)
     if main_query_pos != []:
         sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
+    sub_query['main'] = sub_query['main'] + ' ' + '\n'.join(keep)
     
     return sub_query
 
@@ -121,8 +117,9 @@ def delevel(query_list):
 def has_child(formatted_query):
     
     count = 0
-    for _,v in delevel(formatted_query.split('\n')).items():
-        if v != {}: count += 1
+    if len(delevel(formatted_query.split('\n')).keys()) > 1:
+        for _,v in delevel(formatted_query.split('\n')).items():
+            if v != {}: count += 1
             
     return count != 0
 
@@ -142,6 +139,13 @@ def main_query(query_list, sub_query_pos):
             l.append(i)
     return l
         
+    
+def clean_dict(query_dict):
+    for k,v in query_dict.items(): 
+        if isinstance(v, dict) and len(v.keys()) == 1 and 'main' in v.keys():
+            query_dict[k] = v['main']
+    return query_dict
+
 
 
 def main(query):
@@ -151,32 +155,35 @@ def main(query):
     query_list_0 = formatted_query.split('\n')
     query_dict = {}
     sub_query = delevel(query_list_0)
-    # query_dict['derived_query'] = sub_query
-    query_dict= sub_query
+    query_dict = sub_query
 
     for alias, query in sub_query.items():
+
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
         query_list = formatted_query.split('\n')
-        if has_child(formatted_query):
+
+        if has_child(formatted_query) and alias != 'main':
             sub_query_dict = delevel(query_list)
-            # query_dict['derived_query'][alias] = sub_query_dict
             query_dict[alias] = sub_query_dict
+            query_dict = clean_dict(query_dict)
 
             for alias2, query2 in sub_query_dict.items():
                 formatter2 = column_parser.Parser(query2)
                 formatted_query2 = formatter2.format_query(query2)
                 query_list2 = formatted_query2.split('\n')
                 
-                if has_child(formatted_query2):
+                if has_child(formatted_query2) and alias2 != 'main':
                     sub_query_dict2 = delevel(query_list2)
                     sub_query_dict[alias2] = sub_query_dict2
+                    
                     
                     for alias3, query3 in sub_query_dict2.items():
                         formatter3 = column_parser.Parser(query3)
                         formatted_query3 = formatter3.format_query(query3)
                         query_list3 = formatted_query3.split('\n')
-                        if has_child(formatted_query3):
+                        
+                        if has_child(formatted_query3) and alias3 != 'main':
                             sub_query_dict3 = delevel(query_list3)
                             sub_query_dict2[alias3] = sub_query_dict3
                             
@@ -184,17 +191,25 @@ def main(query):
                                 formatter4 = column_parser.Parser(query4)
                                 formatted_query4 = formatter4.format_query(query4)
                                 query_list4 = formatted_query4.split('\n')
-                                if has_child(formatted_query4):
+                                
+                                if has_child(formatted_query4) and alias4 != 'main':
                                     sub_query_dict4 = delevel(query_list4)
                                     sub_query_dict3[alias4] = sub_query_dict4
                                 else:
                                     pass
+                            query_dict[alias][alias2][alias3] = sub_query_dict3
+                            query_dict = clean_dict(query_dict)
                         else:
                             pass
+                        query_dict[alias][alias2] = sub_query_dict2
+                        query_dict = clean_dict(query_dict)
                 else:
                     pass
+                query_dict[alias] = sub_query_dict
+                query_dict = clean_dict(query_dict)
         else:
             pass
+
 
     return query_dict
 
@@ -204,21 +219,21 @@ def is_cte(query):
 
 
 if __name__ == '__main__':
-    # query = open('query.sql').read()
-    # print(json.dumps(main(query), indent=2))
+    query = open('query.sql').read()
+    print(json.dumps(main(query), indent=2))
 
-    query = open('long_query.sql').read()
-    formatter = column_parser.Parser(query)
-    formatted_query = formatter.format_query(query)
-    query_list = formatted_query.split('\n')
+    # query = open('long_query.sql').read()
+    # formatter = column_parser.Parser(query)
+    # formatted_query = formatter.format_query(query)
+    # query_list = formatted_query.split('\n')
 
-    if is_cte(formatted_query):
-        cte_dict = formatter.parse_cte(formatted_query)
+    # if is_cte(formatted_query):
+    #     cte_dict = formatter.parse_cte(formatted_query)
 
-    for alias, query in cte_dict.items():
-        formatter = column_parser.Parser(query)
-        formatted_query = formatter.format_query(query)
-        try:
-            print(alias, '\n', json.dumps(main(query), indent=2), '\n\n\n')
-        except:
-            pass
+    # for alias, query in cte_dict.items():
+    #     formatter = column_parser.Parser(query)
+    #     formatted_query = formatter.format_query(query)
+    #     try:
+    #         print(alias, '\n', json.dumps(main(query), indent=2), '\n\n\n')
+    #     except:
+    #         pass
