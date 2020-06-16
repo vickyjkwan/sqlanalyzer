@@ -219,6 +219,7 @@ def is_cte(query):
 
 
 if __name__ == '__main__':
+    #### BUG: line 45 `FROM sfdc.oppty` has no alias and wasn't showing #### 
     # query = open('query.sql').read()
     query = open('long_query.sql').read()
     formatter = column_parser.Parser(query)
@@ -236,10 +237,12 @@ if __name__ == '__main__':
             except:
                 final_dict[alias] = formatted_query
 
+        # with open('data.json', 'w') as outfile:
+        #     json.dump(final_dict, outfile)
         print(json.dumps(final_dict, indent=2), '\n\n\n')
 
     else:
         print(json.dumps(main(query), indent=2))
-
-    
-            
+    # else:
+    #     with open('data.json', 'w') as outfile:
+    #         json.dump(main(query), outfile)
