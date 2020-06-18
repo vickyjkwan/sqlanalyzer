@@ -217,6 +217,16 @@ def is_cte(query):
     return query.startswith('WITH')
 
 
+def extract_subquery_fields(query, db_fields):
+    formatter = column_parser.Parser(query)
+    formatted = formatter.format_query(query)
+    fields = formatter.match_queried_fields(formatted, db_fields)
+    return fields
+
+
+
+
+
 if __name__ == '__main__':
     #### BUG: line 45 `FROM sfdc.oppty` has no alias and wasn't showing #### 
     query = open('query.sql').read()
