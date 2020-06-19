@@ -253,9 +253,9 @@ def extract_subquery_fields(query, db_fields):
 
 
 if __name__ == '__main__':
-    #### BUG: line 45 `FROM sfdc.oppty` has no alias and wasn't showing #### 
-    query = open('query.sql').read()
-    # query = open('long_query.sql').read()
+
+    # query = open('query.sql').read()
+    query = open('long_query.sql').read()
     #### BUG: nested was not detected ####
     # query = open('test_query.sql').read()
     formatter = column_parser.Parser(query)
