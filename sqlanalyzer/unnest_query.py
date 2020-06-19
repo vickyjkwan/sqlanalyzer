@@ -2,6 +2,7 @@ from sqlanalyzer import column_parser
 import sqlparse
 import re
 import json
+import pandas as pd
 
 
 def get_joins_pos(query_list):
@@ -232,6 +233,17 @@ def extract_subquery_fields(query, db_fields):
     return fields
 
 
+def compile_queried_cols(query_dict):
+    all_cols = []
+    for _,v in query_dict.items():
+        if isinstance(v, dict):
+            for _,v1 in v.items():
+                all_cols.extend(extract_subquery_fields(v1, df))
+        else:
+            all_cols.extend(extract_subquery_fields(v, df))
+    return all_cols
+
+
 # def longest_paths(query_dict):
 #     l_path = {}
 #     for k,v in query_dict.items():
@@ -282,3 +294,34 @@ if __name__ == '__main__':
     else:
         with open('data.json', 'w') as outfile:
             json.dump(main(query), outfile)
+
+
+    with open('./data.json', 'r') as f:
+        query_dict = json.load(f)
+
+    db_fields_1 = pd.DataFrame({'db_table': 'mapbox_customer_data.segment_identifies', 
+            'all_columns': ['anonymous_id', 'user_id', 'service', 'service_metadata', 'service_metadata_version', 'account', 'num_requests', 'dt']})
+    db_fields_2 = pd.DataFrame({'db_table': 'mapbox_customer_data.accounts', 
+                'all_columns': ['id', 'user_id', 'email', 'created', 'service_metadata_version', 'account', 'num_requests', 'dt']})
+    db_fields_3 = pd.DataFrame({'db_table': 'mapbox_customer_data.segment_pages', 
+            'all_columns': ['anonymous_id', 'context_campaign_name', 'service', 'service_metadata', 'service_metadata_version', 'account', 'num_requests', 'dt']})
+    db_fields_4 = pd.DataFrame({'db_table': 'mapbox_customer_data.segment_tracks', 
+            'all_columns': ['anonymous_id', 'original_timestamp', 'event', 'context_traits_email', 'service_metadata_version', 'account', 'num_requests', 'dt']})
+    db_fields_5 = pd.DataFrame({'db_table': 'sfdc.cases', 
+            'all_columns': ['account', 'num_requests', 'owner', 'anonymous_id', 'id', 'original_timestamp', 'event', 'context_traits_email', 'service_metadata_version', 'dt']})
+    db_fields_6 = pd.DataFrame({'db_table': 'sfdc.owner',
+                           'all_columns': ['dt', 'first_name', 'last_name']})
+    db_fields_7 = pd.DataFrame({'db_table': 'sfdc.accounts',
+                           'all_columns': ['platform', 'case_id', 'mobile_os', 'service_metadata', 'user_id', 'first_name', 'last_name']})
+    df = db_fields_1.append(db_fields_2, ignore_index=True)
+    df = df.append(db_fields_3, ignore_index=True)
+    df = df.append(db_fields_4, ignore_index=True)
+    df = df.append(db_fields_5, ignore_index=True)
+    df = df.append(db_fields_6, ignore_index=True)
+    df = df.append(db_fields_7, ignore_index=True)
+
+    for k,v in query_dict.items():
+        if isinstance(v, dict):
+            print(k, '\n', compile_queried_cols(v), '\n\n')
+        else:
+            print(k, '\n', extract_subquery_fields(v, df), '\n\n')
