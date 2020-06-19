@@ -167,45 +167,53 @@ def main(query):
             query_dict[alias] = sub_query_dict
             query_dict = clean_dict(query_dict)
 
-            for alias2, query2 in sub_query_dict.items():
-                formatter2 = column_parser.Parser(query2)
-                formatted_query2 = formatter2.format_query(query2)
-                query_list2 = formatted_query2.split('\n')
+            # for alias2, query2 in sub_query_dict.items():
+            #     formatter2 = column_parser.Parser(query2)
+            #     formatted_query2 = formatter2.format_query(query2)
+            #     query_list2 = formatted_query2.split('\n')
                 
-                if has_child(formatted_query2) and alias2 != 'main':
-                    sub_query_dict2 = delevel(query_list2)
-                    sub_query_dict[alias2] = sub_query_dict2
+            #     if has_child(formatted_query2) and alias2 != 'main':
+            #         sub_query_dict2 = delevel(query_list2)
+            #         sub_query_dict[alias2] = sub_query_dict2
                     
                     
-                    for alias3, query3 in sub_query_dict2.items():
-                        formatter3 = column_parser.Parser(query3)
-                        formatted_query3 = formatter3.format_query(query3)
-                        query_list3 = formatted_query3.split('\n')
+                    # for alias3, query3 in sub_query_dict2.items():
+                    #     formatter3 = column_parser.Parser(query3)
+                    #     formatted_query3 = formatter3.format_query(query3)
+                    #     query_list3 = formatted_query3.split('\n')
                         
-                        if has_child(formatted_query3) and alias3 != 'main':
-                            sub_query_dict3 = delevel(query_list3)
-                            sub_query_dict2[alias3] = sub_query_dict3
-                            
-                            for alias4, query4 in sub_query_dict3.items():
-                                formatter4 = column_parser.Parser(query4)
-                                formatted_query4 = formatter4.format_query(query4)
-                                query_list4 = formatted_query4.split('\n')
+                    #     try:  
+                    #         if has_child(formatted_query3) and alias3 != 'main':
+                    #             sub_query_dict3 = delevel(query_list3)
+                    #             sub_query_dict2[alias3] = sub_query_dict3
                                 
-                                if has_child(formatted_query4) and alias4 != 'main':
-                                    sub_query_dict4 = delevel(query_list4)
-                                    sub_query_dict3[alias4] = sub_query_dict4
-                                else:
-                                    pass
-                            query_dict[alias][alias2][alias3] = sub_query_dict3
-                            query_dict = clean_dict(query_dict)
-                        else:
-                            pass
-                        query_dict[alias][alias2] = sub_query_dict2
-                        query_dict = clean_dict(query_dict)
-                else:
-                    pass
-                query_dict[alias] = sub_query_dict
-                query_dict = clean_dict(query_dict)
+                    #             for alias4, query4 in sub_query_dict3.items():
+                    #                 formatter4 = column_parser.Parser(query4)
+                    #                 formatted_query4 = formatter4.format_query(query4)
+                    #                 query_list4 = formatted_query4.split('\n')
+                                    
+                    #                 # try:
+                    #                 #     if has_child(formatted_query4) and alias4 != 'main':
+                    #                 #         sub_query_dict4 = delevel(query_list4)
+                    #                 #         sub_query_dict3[alias4] = sub_query_dict4
+                    #                 #     else:
+                    #                 #         pass
+                    #                 # except:
+                    #                 #     pass
+
+                    #             query_dict[alias][alias2][alias3] = sub_query_dict3
+                    #             query_dict = clean_dict(query_dict)
+                    #         else:
+                    #             pass
+                    #     except:
+                    #         pass
+
+                    #     query_dict[alias][alias2] = sub_query_dict2
+                    #     query_dict = clean_dict(query_dict)
+                # else:
+                #     pass
+                # query_dict[alias] = sub_query_dict
+                # query_dict = clean_dict(query_dict)
         else:
             pass
 
