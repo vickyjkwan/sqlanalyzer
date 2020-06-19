@@ -17,7 +17,7 @@ setuptools.setup(name='sqlanalyzer',
       author_email='vickyj.fan2016@gmail.com',
       license='MIT',
       packages=['sqlanalyzer'],
-      install_requires=['sqlparse==0.3.0'],
+      install_requires=['sqlparse==0.3.1'],
       python_requires='>=3.5',
       zip_safe=False)
       
