@@ -98,7 +98,7 @@ class Parser:
             if table_line != []:
                 table_name_line = table_line[0][1].split(' ')
                 
-                if len(table_name_line) == 2:
+                if len(table_name_line) <= 2:
                     table_name_mapping[table_name_line[0].rstrip(')|,')] = table_name_line[0].rstrip(')|,')
 
                 elif len(table_name_line) > 2 and table_name_line[1] == 'AS':
