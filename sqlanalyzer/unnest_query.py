@@ -232,6 +232,25 @@ def extract_subquery_fields(query, db_fields):
     return fields
 
 
+# def longest_paths(query_dict):
+#     l_path = {}
+#     for k,v in query_dict.items():
+#         if isinstance(v, dict): 
+#             for k1,v1 in v.items():
+#                 if isinstance(v1, dict):
+#                     for k2,v2 in v1.items():
+#                         if isinstance(v2, dict):
+#                             print(k2, v2)
+#                         else:
+#                             l_path[k + '_' + k1 + '_' + k2] = v2
+#                 else:
+#                     l_path[k + '_' + k1] = v1
+
+#         else:
+#             l_path[k] = v
+#     return l_path
+
+
 
 if __name__ == '__main__':
     #### BUG: line 45 `FROM sfdc.oppty` has no alias and wasn't showing #### 
