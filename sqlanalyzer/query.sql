@@ -39,13 +39,13 @@ SELECT *
         (SELECT sfdc_accounts.platform, sfdc_accounts.mobile_os, sfdc_accounts.service_metadata,
 sfdc_cases.account, sfdc_cases.num_requests, sfdc_cases.owner, sfdc_accounts.user_id
 FROM sfdc.accounts sfdc_accounts
--- LEFT JOIN 
--- (SELECT MAX(dt) FROM 
---     (SELECT dt 
---     FROM sfdc.oppty 
---     LEFT JOIN (SELECT MAX(dt) FROM (SELECT DISTINCT dt FROM sfdc.owner AS sfdc_owner) AS dt_owner ON sfdc_oppty.dt = sfdc_cases.dt)
---     LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) )
--- AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
+LEFT JOIN 
+(SELECT MAX(dt) FROM 
+    (SELECT dt 
+    FROM sfdc.oppty 
+    LEFT JOIN (SELECT MAX(dt) FROM (SELECT DISTINCT dt FROM sfdc.owner AS sfdc_owner) AS dt_owner ON sfdc_oppty.dt = sfdc_cases.dt)
+    LEFT JOIN (SELECT dt FROM sfdc.cases) sfdc_cases ON sfdc_oppty.dt = sfdc_cases.dt) )
+AS sfdc_cases_oppty ON sfdc_cases_oppty.dt = sfdc_accounts.dt
 LEFT JOIN sfdc.cases AS sfdc_cases ON sfdc_cases.id = sfdc_accounts.case_id
 WHERE sfdc_cases_oppty.dt > '2020-04-03' AND sfdc_cases_oppty.dt < '2020-05-04' ORDER BY 1 GROUP BY 3 LIMIT 20
         ) e ON e.user_id = a.user_id

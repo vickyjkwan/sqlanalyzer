@@ -18,7 +18,7 @@ def get_joins_pos(query_list):
             pos_join.append(i+1)
         if line.startswith('WHERE'):
             pos_where = i
-        if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN'):
+        if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
             pos_join.append(i+1)
 
     if min(pos_delete) == len(query_list)-1:
@@ -267,9 +267,9 @@ def compile_queried_cols(query_dict):
 if __name__ == '__main__':
 
     # query = open('query.sql').read()
-    query = open('long_query.sql').read()
+    # query = open('long_query.sql').read()
     #### BUG: nested was not detected ####
-    # query = open('test_query.sql').read()
+    query = open('test_query.sql').read()
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list = formatted_query.split('\n')
