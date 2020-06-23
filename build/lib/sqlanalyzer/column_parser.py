@@ -178,10 +178,17 @@ class Parser:
                 var_split = var.split('.')
             
                 if len(var_split) == 1:
-                    for db_table in queried_cols:
-                        for k,v in db_table.items():
-                            if var in v:
-                                original_columns_list.append("{}.{}".format(k, var))
+                    if var_split[0] == '*':
+                        for db_table in queried_cols:
+                            for k,v in db_table.items():
+                                for col in v:
+                                    original_columns_list.append("{}.{}".format(k, col))
+                        
+                    else:
+                        for db_table in queried_cols:
+                            for k,v in db_table.items():
+                                if var in v:
+                                    original_columns_list.append("{}.{}".format(k, var))
 
                 elif len(var_split) == 2:
 
