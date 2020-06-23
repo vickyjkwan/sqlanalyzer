@@ -1,4 +1,4 @@
-import sqlparse
+from sqlanalyzer import column_parser
 import re
 import json
 import pandas as pd
@@ -159,3 +159,30 @@ class Unbundle:
                 if v != {}: count += 1
                 
         return count != 0
+
+
+    def extract_query_dict(self, query):
+
+        formatter = column_parser.Parser(query)
+        formatted_query = formatter.format_query(query)
+        query_list_0 = formatted_query.split('\n')
+        query_dict = {}
+
+        sub_query = self.delevel(query_list_0)
+        query_dict = sub_query
+
+        for alias, query in sub_query.items():
+
+            formatter = column_parser.Parser(query)
+            formatted_query = formatter.format_query(query)
+            query_list = formatted_query.split('\n')
+
+            if self.has_child(formatted_query) and alias != 'main':
+                sub_query_dict = self.delevel(query_list)
+                query_dict[alias] = sub_query_dict
+                query_dict = clean_dict(query_dict)
+
+            else:
+                pass
+
+        return query_dict
