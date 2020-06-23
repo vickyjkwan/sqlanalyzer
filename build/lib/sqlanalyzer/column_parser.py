@@ -273,16 +273,3 @@ class Parser:
                 pass
 
         return column_payload
-
-
-# def main(query_location, run_date):
-
-#     logging.info('Getting all fields since last snapshot...')
-#     db_fields = get_db_fields(s3, run_date)
-
-#     logging.info('Reading query...')
-#     query = open('query.sql').read()
-#     formatter = column_parser.Parser(query)
-#     columns_queried = formatter.match_queried_fields(query, db_fields)
-
-#     return columns_queried
