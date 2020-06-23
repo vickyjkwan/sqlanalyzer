@@ -124,8 +124,10 @@ class Parser:
         all_variables = []
 
         for e in query.split('\n'):
-            if sum(list(map(lambda x: '*' in x, re.findall(r"\s[*]?", e)))):
-                variable = []
+            if sum(list(map(lambda x: '*' in x, re.findall(r"([a-z].*[*])", e)))):
+                variable = re.findall(r"([a-z].*[*])", e)
+            elif sum(list(map(lambda x: '*' in x, re.findall(r"([*])", e)))):
+                variable = re.findall(r"([*])", e)
             else:
                 variable = [x.strip(' ') for x in re.findall(r"[a-z_\s.]+", e)]
 
