@@ -48,14 +48,14 @@ class Unbundle:
         for i, line in enumerate(query_list):
             if line.startswith('ORDER') or line.startswith('GROUP'):
                 pos_delete.append(i)
-            if line.startswith('FROM') and len(line.split(' ')) > 1:
+            elif line.startswith('FROM') and len(line.split(' ')) > 1:
                 pos_join.append(i)
             elif line.startswith('FROM') and len(line.split(' ')) == 1:
                 pos_join.append(i+1)
-            if line.startswith('WHERE'):
+            elif line.startswith('WHERE'):
                 pos_where = i
-            if line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
-                pos_join.append(i+1)
+            # elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
+            #     pos_join.append(i+1)
 
         if min(pos_delete) == len(query_list)-1:
             pos_join.append(min(pos_delete))
@@ -161,7 +161,7 @@ class Unbundle:
         return count != 0
 
 
-    def extract_query_dict(self, query):
+    def compile_queried_cols(self, query):
 
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
