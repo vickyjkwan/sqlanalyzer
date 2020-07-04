@@ -161,7 +161,7 @@ class Unbundle:
         return count != 0
 
 
-    def compile_queried_cols(self, query):
+    def extract_query_dict(self, query):
 
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
