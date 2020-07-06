@@ -50,19 +50,25 @@ class Unbundle:
                 pos_delete.append(i)
             elif line.startswith('FROM') and len(line.split(' ')) > 1:
                 pos_join.append(i)
+
             elif line.startswith('FROM') and len(line.split(' ')) == 1:
-                pos_join.append(i+1)
+                j = 0
+                for i2,line2 in enumerate(query_list[i+1:]):
+                    if line2.startswith(' '): j += 1
+                    else: break
+                pos_join.append(j+i)
+
             elif line.startswith('WHERE'):
                 pos_where = i
-            # elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
-            #     pos_join.append(i+1)
+            elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
+                pos_join.append(i)
 
         if min(pos_delete) == len(query_list)-1:
             pos_join.append(min(pos_delete))
         else:
             pass
 
-        return pos_join, pos_where
+        return list(set(pos_join)), pos_where
 
 
     def _get_alias_pos(self, query_list, pos_join, pos_where):

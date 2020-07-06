@@ -52,16 +52,16 @@ class Unbundle:
                 pos_join.append(i)
 
             elif line.startswith('FROM') and len(line.split(' ')) == 1:
-                j = 0
                 for i2,line2 in enumerate(query_list[i+1:]):
-                    if line2.startswith(' '): j += 1
+                    if line2.startswith(' '): pos_join.append(i2+i+1)
                     else: break
-                pos_join.append(j+i)
 
             elif line.startswith('WHERE'):
                 pos_where = i
             elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
-                pos_join.append(i)
+                for i3,line3 in enumerate(query_list[i+1:]):
+                    if line3.startswith(' '): pos_join.append(i3+i+1)
+                    else: break
 
         if min(pos_delete) == len(query_list)-1:
             pos_join.append(min(pos_delete))
