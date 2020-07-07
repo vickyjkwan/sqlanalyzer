@@ -41,61 +41,61 @@ class Unbundle:
         return l
             
 
-    def _get_joins_pos(self, query_list):
+    # def _get_joins_pos(self, query_list):
 
-        pos_delete, pos_where = [len(query_list)-1], len(query_list)
-        pos_join = []
-        for i, line in enumerate(query_list):
-            if line.startswith('ORDER') or line.startswith('GROUP'):
-                pos_delete.append(i)
-            elif line.startswith('FROM') and len(line.split(' ')) > 1:
-                pos_join.append(i)
+    #     pos_delete, pos_where = [len(query_list)-1], len(query_list)
+    #     pos_join = []
+    #     for i, line in enumerate(query_list):
+    #         if line.startswith('ORDER') or line.startswith('GROUP'):
+    #             pos_delete.append(i)
+    #         elif line.startswith('FROM') and len(line.split(' ')) > 1:
+    #             pos_join.append(i)
 
-            elif line.startswith('FROM') and len(line.split(' ')) == 1:
-                for i2,line2 in enumerate(query_list[i+1:]):
-                    if line2.startswith(' '): pos_join.append(i2+i+1)
-                    else: break
+    #         elif line.startswith('FROM') and len(line.split(' ')) == 1:
+    #             for i2,line2 in enumerate(query_list[i+1:]):
+    #                 if line2.startswith(' '): pos_join.append(i2+i+1)
+    #                 else: break
 
-            elif line.startswith('WHERE'):
-                pos_where = i
-            elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
-                for i3,line3 in enumerate(query_list[i+1:]):
-                    if line3.startswith(' '): pos_join.append(i3+i+1)
-                    else: break
+    #         elif line.startswith('WHERE'):
+    #             pos_where = i
+    #         elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
+    #             for i3,line3 in enumerate(query_list[i+1:]):
+    #                 if line3.startswith(' '): pos_join.append(i3+i+1)
+    #                 else: break
 
-        if min(pos_delete) == len(query_list)-1:
-            pos_join.append(min(pos_delete))
-        else:
-            pass
+    #     if min(pos_delete) == len(query_list)-1:
+    #         pos_join.append(min(pos_delete))
+    #     else:
+    #         pass
 
-        return list(set(pos_join)), pos_where
+    #     return list(set(pos_join)), pos_where
 
 
-    def _get_alias_pos(self, query_list, pos_join, pos_where):
+    # def _get_alias_pos(self, query_list, pos_join, pos_where):
 
-        pos_join_list = iter(pos_join)
-        next(pos_join_list)
-        alias_pos = []
+    #     pos_join_list = iter(pos_join)
+    #     next(pos_join_list)
+    #     alias_pos = []
 
-        if query_list[pos_join[0]].startswith('FROM'):
-            alias_pos.append(pos_join[0])
+    #     if query_list[pos_join[0]].startswith('FROM'):
+    #         alias_pos.append(pos_join[0])
 
-        for i in range(len(pos_join)-1):
-            if i < len(pos_join)-2 and pos_join[i] < pos_where:
-                end_pos = next(pos_join_list)-1
-                alias_pos.append(end_pos-1)
+    #     for i in range(len(pos_join)-1):
+    #         if i < len(pos_join)-2 and pos_join[i] < pos_where:
+    #             end_pos = next(pos_join_list)-1
+    #             alias_pos.append(end_pos-1)
 
-            elif pos_join[-1] >= pos_where:
-                end_pos = next(pos_join_list)-1
-                alias_pos.append(pos_where - 1)
+    #         elif pos_join[-1] >= pos_where:
+    #             end_pos = next(pos_join_list)-1
+    #             alias_pos.append(pos_where - 1)
             
-            else:
-                end_pos = pos_join[-1]
-                alias_pos.append(pos_where-1)
+    #         else:
+    #             end_pos = pos_join[-1]
+    #             alias_pos.append(pos_where-1)
 
-        alias_pos = sorted(list(set(alias_pos)))
+    #     alias_pos = sorted(list(set(alias_pos)))
 
-        return alias_pos
+    #     return alias_pos
 
 
     def _parse_sub_query(self, query_list, sub_query_pos):
@@ -141,19 +141,19 @@ class Unbundle:
         return sub_query, keep
 
 
-    def delevel(self, query_list):
+    # def delevel(self, query_list):
 
-        sub_query = {}
-        pos_join, pos_where = self._get_joins_pos(query_list)
-        alias_pos = self._get_alias_pos(query_list, pos_join, pos_where)
-        sub_query_pos = list(zip(pos_join, alias_pos))
-        sub_query, keep = self._parse_sub_query(query_list, sub_query_pos)
-        main_query_pos = self.main_query(query_list, sub_query_pos)
-        if main_query_pos != []:
-            sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
-        sub_query['main'] = sub_query['main'] + ' ' + '\n'.join(keep)
+    #     sub_query = {}
+    #     pos_join, pos_where = self._get_joins_pos(query_list)
+    #     alias_pos = self._get_alias_pos(query_list, pos_join, pos_where)
+    #     sub_query_pos = list(zip(pos_join, alias_pos))
+    #     sub_query, keep = self._parse_sub_query(query_list, sub_query_pos)
+    #     main_query_pos = self.main_query(query_list, sub_query_pos)
+    #     if main_query_pos != []:
+    #         sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
+    #     sub_query['main'] = sub_query['main'] + ' ' + '\n'.join(keep)
         
-        return sub_query
+    #     return sub_query
 
 
     def has_child(self, formatted_query):
