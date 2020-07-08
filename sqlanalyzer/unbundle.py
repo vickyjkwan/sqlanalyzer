@@ -1,7 +1,6 @@
 from sqlanalyzer import column_parser
 import re
 import json
-import pandas as pd
 
 
 def within(num, rng):
@@ -98,47 +97,47 @@ class Unbundle:
     #     return alias_pos
 
 
-    # def _parse_sub_query(self, query_list, sub_query_pos):
+    def _parse_sub_query(self, query_list, sub_query_pos):
 
-    #     sub_query = {}
-    #     keep = []
-    #     for _, sub_pos in enumerate(sub_query_pos):
-    #         alias = query_list[sub_pos[1]]
-    #         query = query_list[sub_pos[0]: sub_pos[1]]
+        sub_query = {}
+        keep = []
+        for _, sub_pos in enumerate(sub_query_pos):
+            alias = query_list[sub_pos[1]]
+            query = query_list[sub_pos[0]: sub_pos[1]]
 
-    #         try:
-    #             alias_list_rev = alias.split(' ')[::-1]
-    #             if alias_list_rev[0][-1] != ')':
-    #                 alias_index = alias_list_rev.index('ON')
-    #                 alias = alias_list_rev[alias_index+1]
+            try:
+                alias_list_rev = alias.split(' ')[::-1]
+                if alias_list_rev[0][-1] != ')':
+                    alias_index = alias_list_rev.index('ON')
+                    alias = alias_list_rev[alias_index+1]
 
-    #                 if alias_list_rev[alias_index+2] == 'AS':
-    #                     keep.append(' '.join(alias_list_rev[:alias_index+3][::-1]))
-    #                     del alias_list_rev[:alias_index+3]
+                    if alias_list_rev[alias_index+2] == 'AS':
+                        keep.append(' '.join(alias_list_rev[:alias_index+3][::-1]))
+                        del alias_list_rev[:alias_index+3]
 
-    #                 else:
-    #                     keep.append(' '.join(alias_list_rev[:alias_index+2][::-1]))
-    #                     del alias_list_rev[:alias_index+2]
+                    else:
+                        keep.append(' '.join(alias_list_rev[:alias_index+2][::-1]))
+                        del alias_list_rev[:alias_index+2]
 
-    #                 query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
+                    query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
 
-    #             else:
-    #                 alias_list_rev[0] = alias_list_rev[0].rstrip(r'\)')
-    #                 alias = 'no alias'
-    #                 query.append(' '.join(alias_list_rev[::-1]))
+                else:
+                    alias_list_rev[0] = alias_list_rev[0].rstrip(r'\)')
+                    alias = 'no alias'
+                    query.append(' '.join(alias_list_rev[::-1]))
 
-    #         except:
-    #             query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
-    #             alias = alias.split(' ')[-1]
+            except:
+                query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
+                alias = alias.split(' ')[-1]
 
-    #         trans_query = ' '.join(query).lstrip(r' \(').lstrip(' FROM')
+            trans_query = ' '.join(query).lstrip(r' \(').lstrip(' FROM')
         
-    #         if trans_query == '':
-    #             sub_query = {}
-    #         else:
-    #             sub_query[alias] = trans_query
+            if trans_query == '':
+                sub_query = {}
+            else:
+                sub_query[alias] = trans_query
             
-    #     return sub_query, keep
+        return sub_query, keep
 
 
     # def delevel(self, query_list):
