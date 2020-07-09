@@ -65,11 +65,20 @@ def divide(copy_query_list):
             sub_join.append(line)
             del copy_query_list[:i+1]
             join_query = next((s for s in copy_query_list if not s.startswith(' ')), 'end of query')
+            
+            
             try:
                 join_pos = copy_query_list.index(join_query)
-                sub_join.extend(copy_query_list[:join_pos])
-                del copy_query_list[:join_pos]
-                break
+                if line.startswith('FROM'):
+                    sub_join.extend(copy_query_list[:join_pos])
+                    del copy_query_list[:join_pos]
+                    break
+                    
+                else:
+                    sub_join.extend(copy_query_list[:join_pos+1])
+                    del copy_query_list[:join_pos+1]
+                    break
+                    
             except: 
                 sub_join.extend(copy_query_list)
                 del copy_query_list[:]
@@ -79,6 +88,7 @@ def divide(copy_query_list):
     
 
 def parse_alias(main_query, sub_query):
+    
     sub_query_list = sub_query.rstrip('\n ').split(' ')
     sub_query_list = [w for w in sub_query_list if w]
     sub_query_dict = {}
@@ -96,7 +106,9 @@ def parse_alias(main_query, sub_query):
             
         else:
             alias = 'no alias'
-    
+            
+        main_query.append(alias)
+        
     elif sub_query_list[0].rstrip('\n ') not in ('FROM', 'CROSS'):
         
         join_ind = sub_query_list.index('JOIN')
@@ -108,13 +120,18 @@ def parse_alias(main_query, sub_query):
         try: 
             on_ind = sub_query_list_rev.index('ON')
             alias = sub_query_list_rev[on_ind+1]
-
+            main_part = sub_query_list_rev[:on_ind+2][::-1]
+            del sub_query_list_rev[:on_ind+2]
+            sub_query_list = sub_query_list_rev[::-1]
+            
         except ValueError:
             if sub_query_list_rev[0] != ')':
                 alias = sub_query_list_rev[0]
             else:
                 alias = 'no alias'
-    
+        
+        main_query.extend(main_part)
+        
     elif sub_query_list[0].rstrip('\n ') == 'CROSS':
         
         join_ind = sub_query_list.index('JOIN')
@@ -128,10 +145,12 @@ def parse_alias(main_query, sub_query):
 
         except ValueError:
             alias = sub_query_list_rev[0]
+        
+        main_query.append(alias)
     
-    main_query.append(alias)
     sub_query_dict[alias] = ' '.join(sub_query_list).lstrip('(').rstrip(')')
     return main_query, sub_query_dict
+
 
 
 def stitch_main(main_query, sub_query):
@@ -175,4 +194,3 @@ def main():
 
 if __name__ == '__main__':
     print(main())
-    
