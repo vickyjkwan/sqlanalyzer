@@ -33,6 +33,8 @@ def clean_dict(query_dict):
     return query_dict
 
 
+# class below
+
 def get_sub_query(query_list):
     pos_delete, pos_where = [len(query_list)-1], len(query_list)
 
@@ -140,7 +142,7 @@ def stitch_main(main_query, sub_query):
         main_query.append(sub_query)
         
     return main_query, sub_query_dict
-    
+
 
 def separator(copy_query_list, main_query):
     sub_query_list_copy = copy_query_list
@@ -173,3 +175,4 @@ def main():
 
 if __name__ == '__main__':
     print(main())
+    
