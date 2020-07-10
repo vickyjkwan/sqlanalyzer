@@ -50,14 +50,17 @@ def get_sub_query(query_list):
     main = next((s for s in copy_query_list if s.startswith('FROM')), 'end of query')
     main_pos = copy_query_list.index(main)
     main_query = copy_query_list[:main_pos]
-    main_query.extend(copy_query_list[pos_where:end_of_query])
+    if end_of_query == pos_where:
+        main_query.extend(copy_query_list[pos_where:end_of_query+1])
+    else:
+        main_query.extend(copy_query_list[pos_where:end_of_query])
     del copy_query_list[:main_pos]
     del copy_query_list[(pos_where-main_pos):]
     
     return main_query, copy_query_list
         
 
-def divide(copy_query_list):
+def divider(copy_query_list):
     sub_join = []
     for i, line in enumerate(copy_query_list): 
 
@@ -66,10 +69,9 @@ def divide(copy_query_list):
             del copy_query_list[:i+1]
             join_query = next((s for s in copy_query_list if not s.startswith(' ')), 'end of query')
             
-            
             try:
                 join_pos = copy_query_list.index(join_query)
-                if line.startswith('FROM'):
+                if landmark(copy_query_list[join_pos]):
                     sub_join.extend(copy_query_list[:join_pos])
                     del copy_query_list[:join_pos]
                     break
@@ -78,7 +80,7 @@ def divide(copy_query_list):
                     sub_join.extend(copy_query_list[:join_pos+1])
                     del copy_query_list[:join_pos+1]
                     break
-                    
+    
             except: 
                 sub_join.extend(copy_query_list)
                 del copy_query_list[:]
@@ -100,9 +102,12 @@ def parse_alias(main_query, sub_query):
         
         sub_query_list_rev = sub_query_list[::-1]
         
-        if sub_query_list_rev[0] != ')':
+        if sub_query_list_rev[0][-1] != ')':
             alias = sub_query_list_rev[0]
             sub_query_list.pop()
+
+            if sub_query_list[-1] == 'AS':
+                sub_query_list.pop()
             
         else:
             alias = 'no alias'
@@ -125,7 +130,7 @@ def parse_alias(main_query, sub_query):
             sub_query_list = sub_query_list_rev[::-1]
             
         except ValueError:
-            if sub_query_list_rev[0] != ')':
+            if sub_query_list_rev[0][-1] != ')':
                 alias = sub_query_list_rev[0]
             else:
                 alias = 'no alias'
@@ -152,7 +157,6 @@ def parse_alias(main_query, sub_query):
     return main_query, sub_query_dict
 
 
-
 def stitch_main(main_query, sub_query):
     sub_query_dict = {}
     if has_child(sub_query):
@@ -169,7 +173,7 @@ def separator(copy_query_list, main_query):
     sub_queries = []
 
     while sub_query:
-        sub_join, sub_query_list_copy = divide(sub_query_list_copy)
+        sub_join, sub_query_list_copy = divider(sub_query_list_copy)
         sub_query = ' '.join(sub_join)
         main_query, sub_query_dict = stitch_main(main_query, sub_query)
         if sub_query_dict != {}: sub_queries.append(sub_query_dict)
@@ -183,9 +187,9 @@ def main():
 
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
-    query_list_0 = formatted_query.split('\n')
+    query_list = formatted_query.split('\n')
 
-    main_query, copy_query_list = get_sub_query(query_list_0)
+    main_query, copy_query_list = get_sub_query(query_list)
 
     main_query, sub_queries = separator(copy_query_list, main_query)
 
