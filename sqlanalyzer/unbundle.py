@@ -222,37 +222,32 @@ def delevel(query):
     return main_query, sub_queries
 
 
+
+def restructure_subquery(query_dict, query_name, sub_query):
+    
+    main_query, sub_queries = delevel(sub_query)
+    query_dict[query_name] = main_query
+
+    return query_dict, main_query, sub_queries
+
+
 def main():
 
     query = open('../query.sql').read()
 
     query_dict = {}
     if has_child(query):
-        main_query, sub_queries = delevel(query)
-        query_dict['main'] = main_query
-
+        query_dict, main_query, sub_queries = restructure_subquery(query_dict, 'main', query)
     else: 
-        query_dict['cte'] = sub_queries
+        query_dict['main'] = query
+            
+    for subq in sub_queries:
+        for k,v in subq.items():
+            query_dict, main_query, sub_queries = restructure_subquery(query_dict, k, v)
 
     for subq in sub_queries:
         for k,v in subq.items():
-            
-            if has_child(v):
-                main_query, sub_queries = delevel(v)
-                query_dict[k] = main_query
-                
-            else: 
-                query_dict[k] = sub_queries
-                
-    for subq in sub_queries:
-        for k,v in subq.items():
-            
-            if has_child(v):
-                main_query, sub_queries = delevel(v)
-                query_dict[k] = main_query
-
-            else: 
-                query_dict[k] = subq
+            query_dict, main_query, sub_queries = restructure_subquery(query_dict, k, v)
 
     return query_dict            
     
