@@ -33,3 +33,7 @@ SELECT a.*,
          WHERE dt >= '2018-07-01'
            AND event LIKE 'submitted_%form'
            AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event
+
+WHERE id = '123'
+GROUP BY 1,2,3
+Order by 1,2,3

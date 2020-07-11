@@ -16,10 +16,12 @@ def landmark(line):
     for syntax in ['FROM', 'LEFT JOIN', 'INNER JOIN', 'OUTER JOIN', 'RIGHT JOIN', 'CROSS JOIN', 'FULL JOIN', 'FULL OUTER JOIN']:
         if line.startswith(syntax):
             return True
+        else:
+            return False
 
 
 def has_child(sub_query):
-    if 'SELECT' in sub_query:
+    if 'SELECT' in sub_query and not sub_query.startswith('WITH'):
         return True
     else: 
         return False
@@ -51,11 +53,21 @@ def get_sub_query(query_list):
     main_pos = copy_query_list.index(main)
     main_query = copy_query_list[:main_pos]
     if end_of_query == pos_where:
+    # when WHERE is the end of query, ie no more GROUP BY or ORDER BY
         main_query.extend(copy_query_list[pos_where:end_of_query+1])
-    else:
+        del copy_query_list[:main_pos]
+
+    elif end_of_query < pos_where:
+    # when there is no WHERE clause
         main_query.extend(copy_query_list[pos_where:end_of_query])
-    del copy_query_list[:main_pos]
-    del copy_query_list[(pos_where-main_pos):]
+        del copy_query_list[:main_pos]
+        del copy_query_list[(end_of_query - main_pos):]
+    
+    elif end_of_query > pos_where:
+    # when there's more after WHERE, eg GROUP BY/ORDER BY
+        main_query.extend(copy_query_list[pos_where:end_of_query])
+        del copy_query_list[:main_pos]
+        del copy_query_list[end_of_query-1:]
     
     return main_query, copy_query_list
         
