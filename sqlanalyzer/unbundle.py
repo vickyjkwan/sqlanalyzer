@@ -12,30 +12,14 @@ def is_cte(query):
     return query.startswith('WITH')
 
 
-def landmark(line):
-    for syntax in ['FROM', 'LEFT JOIN', 'INNER JOIN', 'OUTER JOIN', 'RIGHT JOIN', 'CROSS JOIN', 'FULL JOIN', 'FULL OUTER JOIN']:
-        if line.startswith(syntax):
-            return True
-        else:
-            return False
-
-
-def has_child(sub_query):
-    if 'SELECT' in sub_query and not sub_query.startswith('WITH'):
-        return True
-    else: 
-        return False
-
-
 def clean_dict(query_dict):
+
     for k,v in query_dict.items(): 
         if isinstance(v, dict) and len(v.keys()) == 1 and 'main' in v.keys():
             query_dict[k] = v['main']
             
     return query_dict
 
-
-# class below
 
 def get_sub_query(query_list):
     pos_delete, pos_where = [len(query_list)-1], len(query_list)
@@ -56,12 +40,18 @@ def get_sub_query(query_list):
     # when WHERE is the end of query, ie no more GROUP BY or ORDER BY
         main_query.extend(copy_query_list[pos_where:end_of_query+1])
         del copy_query_list[:main_pos]
+        del copy_query_list[end_of_query-1:]
 
-    elif end_of_query < pos_where:
-    # when there is no WHERE clause
+    elif end_of_query < pos_where and not copy_query_list[-1].startswith(' '):
+    # when there is no WHERE clause but GROUP BY and others
         main_query.extend(copy_query_list[pos_where:end_of_query])
         del copy_query_list[:main_pos]
         del copy_query_list[(end_of_query - main_pos):]
+
+    elif end_of_query < pos_where and copy_query_list[-1].startswith(' '):
+    # when there is no WHERE clause and no GROUP BY or others
+        main_query.extend(copy_query_list[pos_where:end_of_query])
+        del copy_query_list[:main_pos]
     
     elif end_of_query > pos_where:
     # when there's more after WHERE, eg GROUP BY/ORDER BY
@@ -70,6 +60,26 @@ def get_sub_query(query_list):
         del copy_query_list[end_of_query-1:]
     
     return main_query, copy_query_list
+
+
+def landmark(line):
+    if line.startswith('FROM'):
+        return True
+    elif line.startswith('LEFT JOIN'):
+        return True
+    elif line.startswith('INNER JOIN'):
+        return True
+    elif line.startswith('OUTER JOIN'):
+        return True
+    elif line.startswith('RIGHT JOIN'):
+        return True
+    elif line.startswith('CROSS JOIN'):
+        return True
+    elif line.startswith('FULL JOIN'):
+        return True
+    elif line.startswith('FULL OUTER JOIN'):
+        return True
+    else: return False
         
 
 def divider(copy_query_list):
@@ -99,6 +109,13 @@ def divider(copy_query_list):
                 break
 
     return sub_join, copy_query_list
+     
+
+def has_child(sub_query):
+    if not sub_query.startswith('WITH') and sub_query.count("SELECT") > 1:
+        return True
+    else: 
+        return False
     
 
 def parse_alias(main_query, sub_query):
@@ -117,7 +134,7 @@ def parse_alias(main_query, sub_query):
         if sub_query_list_rev[0][-1] != ')':
             alias = sub_query_list_rev[0]
             sub_query_list.pop()
-
+            
             if sub_query_list[-1] == 'AS':
                 sub_query_list.pop()
             
@@ -166,6 +183,7 @@ def parse_alias(main_query, sub_query):
         main_query.append(alias)
     
     sub_query_dict[alias] = ' '.join(sub_query_list).lstrip('(').rstrip(')')
+    
     return main_query, sub_query_dict
 
 
@@ -193,20 +211,51 @@ def separator(copy_query_list, main_query):
     return ' '.join(main_query), sub_queries
 
 
-def main():
-
-    query = open('../sample_query.sql').read()
-
+def delevel(query):
     formatter = column_parser.Parser(query)
     formatted_query = formatter.format_query(query)
     query_list = formatted_query.split('\n')
 
     main_query, copy_query_list = get_sub_query(query_list)
-
     main_query, sub_queries = separator(copy_query_list, main_query)
-
+    
     return main_query, sub_queries
 
+
+def main():
+
+    query = open('../query.sql').read()
+
+    query_dict = {}
+    if has_child(query):
+        main_query, sub_queries = delevel(query)
+        query_dict['main'] = main_query
+
+    else: 
+        query_dict['cte'] = sub_queries
+
+    for subq in sub_queries:
+        for k,v in subq.items():
+            
+            if has_child(v):
+                main_query, sub_queries = delevel(v)
+                query_dict[k] = main_query
+                
+            else: 
+                query_dict[k] = sub_queries
+                
+    for subq in sub_queries:
+        for k,v in subq.items():
+            
+            if has_child(v):
+                main_query, sub_queries = delevel(v)
+                query_dict[k] = main_query
+
+            else: 
+                query_dict[k] = subq
+
+    return query_dict            
+    
 
 if __name__ == '__main__':
     print(main())
