@@ -1,10 +1,13 @@
 from sqlanalyzer import column_parser, unbundle
-from sqlanalyzer.unbundle import *
 import sqlparse
 import re
 import json
 import pandas as pd
 import time
+
+
+def is_cte(query):
+    return query.startswith('WITH')
 
 
 def extract_subquery_fields(query, db_fields):

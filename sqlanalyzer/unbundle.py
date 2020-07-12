@@ -8,10 +8,6 @@ def within(num, rng):
     else: return 0
 
 
-def is_cte(query):
-    return query.startswith('WITH')
-
-
 def clean_dict(query_dict):
 
     for k,v in query_dict.items(): 
