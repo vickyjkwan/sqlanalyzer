@@ -240,28 +240,28 @@ class Unbundle:
         return query_dict, sub_queries
 
 
-def main():
+# def main():
 
-    query = open('../query.sql').read()
+#     query = open('../query.sql').read()
 
-    unbundled = Unbundle(query)
+#     unbundled = Unbundle(query)
 
-    query_dict = {}
-    if unbundled.has_child(query):
-        query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'main', query)
-    else: 
-        query_dict['main'] = query
+#     query_dict = {}
+#     if unbundled.has_child(query):
+#         query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'main', query)
+#     else: 
+#         query_dict['main'] = query
             
-    for subq in sub_queries:
-        for k,v in subq.items():
-            query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
+#     for subq in sub_queries:
+#         for k,v in subq.items():
+#             query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
 
-    for subq in sub_queries:
-        for k,v in subq.items():
-            query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
+#     for subq in sub_queries:
+#         for k,v in subq.items():
+#             query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
 
-    return query_dict            
+#     return query_dict            
     
 
-if __name__ == '__main__':
-    print(main())
+# if __name__ == '__main__':
+#     print(main())
