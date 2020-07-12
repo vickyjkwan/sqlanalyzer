@@ -41,6 +41,8 @@ FROM
                  AND event LIKE 'submitted_%form'
                  AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event)
          WHERE context_campaign_name IS NOT NULL ),
+
+
            non_reg_users AS
         (SELECT context_campaign_name ,
                 min_exposure ,
@@ -75,6 +77,8 @@ FROM
          WHERE anon_id_event IS NOT NULL
            AND to_unixtime(min_exposure) <= to_unixtime(original_timestamp)
            AND cast(min_exposure AS DATE) >= cast(original_timestamp AS DATE) - INTERVAL '28' DAY ),
+
+
            mql_flag AS
         (SELECT email ,
                 created_date ,
@@ -97,6 +101,8 @@ FROM
             GROUP BY 1)
          WHERE mql_flag = 1
            AND is_deleted = 0 ),
+
+
            cleaned_list AS
         (SELECT DISTINCT *
          FROM
@@ -117,8 +123,11 @@ FROM
             WHERE to_unixtime(min_exposure) <= to_unixtime(original_timestamp)
               AND cast(min_exposure AS DATE) >= cast(original_timestamp AS DATE) - INTERVAL '28' DAY
             UNION ALL SELECT *
-            FROM non_reg_users)) SELECT a.* ,
-                                        b.*
+            FROM non_reg_users)) 
+            
+            
+            SELECT a.* ,
+                   b.*
       FROM cleaned_list a
       LEFT JOIN mql_flag b ON a.event_email = b.email) custom_sql_query
    LIMIT 0) T

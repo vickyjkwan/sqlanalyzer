@@ -46,11 +46,13 @@ class Unbundle:
     def __init__(self, raw_query=""):
         self.raw_query = raw_query
 
+
     def has_child(self, sub_query):
         if not sub_query.startswith('WITH') and sub_query.count("SELECT") > 1:
             return True
         else: 
             return False
+
 
     def get_sub_query(self, query_list):
         pos_delete, pos_where = [len(query_list)-1], len(query_list)
@@ -160,7 +162,10 @@ class Unbundle:
                 on_ind = sub_query_list_rev.index('ON')
                 alias = sub_query_list_rev[on_ind+1]
                 main_part = sub_query_list_rev[:on_ind+2][::-1]
-                del sub_query_list_rev[:on_ind+2]
+                if sub_query_list_rev[on_ind+2] == 'AS':
+                    del sub_query_list_rev[:on_ind+3]
+                else:
+                    del sub_query_list_rev[:on_ind+2]
                 sub_query_list = sub_query_list_rev[::-1]
                 
             except ValueError:
