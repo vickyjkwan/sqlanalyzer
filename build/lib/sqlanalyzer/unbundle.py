@@ -1,7 +1,6 @@
 from sqlanalyzer import column_parser
 import re
 import json
-import pandas as pd
 
 
 def within(num, rng):
@@ -22,173 +21,247 @@ def clean_dict(query_dict):
     return query_dict
 
 
+def landmark(line):
+    if line.startswith('FROM'):
+        return True
+    elif line.startswith('LEFT JOIN'):
+        return True
+    elif line.startswith('INNER JOIN'):
+        return True
+    elif line.startswith('OUTER JOIN'):
+        return True
+    elif line.startswith('RIGHT JOIN'):
+        return True
+    elif line.startswith('CROSS JOIN'):
+        return True
+    elif line.startswith('FULL JOIN'):
+        return True
+    elif line.startswith('FULL OUTER JOIN'):
+        return True
+    else: return False
+
+
 class Unbundle:
 
     def __init__(self, raw_query=""):
         self.raw_query = raw_query
 
 
-    def main_query(self, query_list, sub_query_pos):
+    def has_child(self, sub_query):
+        if not sub_query.startswith('WITH') and sub_query.count("SELECT") > 1:
+            return True
+        else: 
+            return False
 
-        l = []
-        for i in range(len(query_list)): 
-            count = 0
-            for pair in sorted(sub_query_pos):
-                count += within(i, pair)
-            if count == 0:
-                l.append(i)
 
-        return l
-            
-
-    def _get_joins_pos(self, query_list):
-
+    def get_sub_query(self, query_list):
         pos_delete, pos_where = [len(query_list)-1], len(query_list)
-        pos_join = []
+
         for i, line in enumerate(query_list):
             if line.startswith('ORDER') or line.startswith('GROUP'):
-                pos_delete.append(i)
-            elif line.startswith('FROM') and len(line.split(' ')) > 1:
-                pos_join.append(i)
-
-            elif line.startswith('FROM') and len(line.split(' ')) == 1:
-                for i2,line2 in enumerate(query_list[i+1:]):
-                    if line2.startswith(' '): pos_join.append(i2+i+1)
-                    else: break
-
+                pos_delete.append(i)    
             elif line.startswith('WHERE'):
                 pos_where = i
-            elif line.startswith('LEFT JOIN') or line.startswith('INNER JOIN') or line.startswith('FULL OUTER JOIN') or line.startswith('RIGHT JOIN'):
-                for i3,line3 in enumerate(query_list[i+1:]):
-                    if line3.startswith(' '): pos_join.append(i3+i+1)
-                    else: break
 
-        if min(pos_delete) == len(query_list)-1:
-            pos_join.append(min(pos_delete))
-        else:
-            pass
+        end_of_query = min(pos_delete) 
+        
+        copy_query_list = query_list.copy()
+        main = next((s for s in copy_query_list if s.startswith('FROM')), 'end of query')
+        main_pos = copy_query_list.index(main)
+        main_query = copy_query_list[:main_pos]
 
-        return list(set(pos_join)), pos_where
+        if end_of_query == pos_where:
+        # when WHERE is the end of query, ie no more GROUP BY or ORDER BY
+            main_query.extend(copy_query_list[pos_where:end_of_query+1])
+            del copy_query_list[:main_pos]
+            del copy_query_list[end_of_query-1:]
 
+        elif end_of_query < pos_where and not copy_query_list[-1].startswith(' '):
+        # when there is no WHERE clause but GROUP BY and others
+            main_query.extend(copy_query_list[pos_where:end_of_query])
+            del copy_query_list[:main_pos]
+            del copy_query_list[(end_of_query - main_pos):]
 
-    def _get_alias_pos(self, query_list, pos_join, pos_where):
-
-        pos_join_list = iter(pos_join)
-        next(pos_join_list)
-        alias_pos = []
-
-        if query_list[pos_join[0]].startswith('FROM'):
-            alias_pos.append(pos_join[0])
-
-        for i in range(len(pos_join)-1):
-            if i < len(pos_join)-2 and pos_join[i] < pos_where:
-                end_pos = next(pos_join_list)-1
-                alias_pos.append(end_pos-1)
-
-            elif pos_join[-1] >= pos_where:
-                end_pos = next(pos_join_list)-1
-                alias_pos.append(pos_where - 1)
+        elif end_of_query < pos_where and copy_query_list[-1].startswith(' '):
+        # when there is no WHERE clause and no GROUP BY or others
+            main_query.extend(copy_query_list[pos_where:end_of_query])
+            del copy_query_list[:main_pos]
+        
+        elif end_of_query > pos_where:
+        # when there's more after WHERE, eg GROUP BY/ORDER BY
+            main_query.extend(copy_query_list[pos_where:end_of_query])
+            del copy_query_list[:main_pos]
+            del copy_query_list[end_of_query-1:]
+        
+        return main_query, copy_query_list
             
-            else:
-                end_pos = pos_join[-1]
-                alias_pos.append(pos_where-1)
 
-        alias_pos = sorted(list(set(alias_pos)))
+    def _divider(self, copy_query_list):
+        sub_join = []
+        for i, line in enumerate(copy_query_list): 
 
-        return alias_pos
-
-
-    def _parse_sub_query(self, query_list, sub_query_pos):
-
-        sub_query = {}
-        keep = []
-        for _, sub_pos in enumerate(sub_query_pos):
-            alias = query_list[sub_pos[1]]
-            query = query_list[sub_pos[0]: sub_pos[1]]
-
-            try:
-                alias_list_rev = alias.split(' ')[::-1]
-                if alias_list_rev[0][-1] != ')':
-                    alias_index = alias_list_rev.index('ON')
-                    alias = alias_list_rev[alias_index+1]
-
-                    if alias_list_rev[alias_index+2] == 'AS':
-                        keep.append(' '.join(alias_list_rev[:alias_index+3][::-1]))
-                        del alias_list_rev[:alias_index+3]
-
-                    else:
-                        keep.append(' '.join(alias_list_rev[:alias_index+2][::-1]))
-                        del alias_list_rev[:alias_index+2]
-
-                    query.append(' '.join(alias_list_rev[::-1]).rstrip(r'\)').lstrip(' '))
-
-                else:
-                    alias_list_rev[0] = alias_list_rev[0].rstrip(r'\)')
-                    alias = 'no alias'
-                    query.append(' '.join(alias_list_rev[::-1]))
-
-            except:
-                query.append(' '.join(alias.split(' ')[:-1]).rstrip(r'\)').lstrip(' '))
-                alias = alias.split(' ')[-1]
-
-            trans_query = ' '.join(query).lstrip(r' \(').lstrip(' FROM')
-        
-            if trans_query == '':
-                sub_query = {}
-            else:
-                sub_query[alias] = trans_query
-            
-        return sub_query, keep
-
-
-    def delevel(self, query_list):
-
-        sub_query = {}
-        pos_join, pos_where = self._get_joins_pos(query_list)
-        alias_pos = self._get_alias_pos(query_list, pos_join, pos_where)
-        sub_query_pos = list(zip(pos_join, alias_pos))
-        sub_query, keep = self._parse_sub_query(query_list, sub_query_pos)
-        main_query_pos = self.main_query(query_list, sub_query_pos)
-        if main_query_pos != []:
-            sub_query['main'] = '\n'.join([query_list[p] for p in main_query_pos])
-        sub_query['main'] = sub_query['main'] + ' ' + '\n'.join(keep)
-        
-        return sub_query
-
-
-    def has_child(self, formatted_query):
-        
-        count = 0
-        deleveled_list = self.delevel(formatted_query.split('\n'))
-        if len(deleveled_list.keys()) > 1:
-            for _,v in deleveled_list.items():
-                if v != {}: count += 1
+            if landmark(line):
+                sub_join.append(line)
+                del copy_query_list[:i+1]
+                join_query = next((s for s in copy_query_list if not s.startswith(' ')), 'end of query')
                 
-        return count != 0
+                try:
+                    join_pos = copy_query_list.index(join_query)
+                    if landmark(copy_query_list[join_pos]):
+                        sub_join.extend(copy_query_list[:join_pos])
+                        del copy_query_list[:join_pos]
+                        break
+                        
+                    else:
+                        sub_join.extend(copy_query_list[:join_pos+1])
+                        del copy_query_list[:join_pos+1]
+                        break
+        
+                except: 
+                    sub_join.extend(copy_query_list)
+                    del copy_query_list[:]
+                    break
+
+        return sub_join, copy_query_list
+        
+
+    def _parse_alias(self, main_query, sub_query):
+        
+        sub_query_list = sub_query.rstrip('\n ').split(' ')
+        sub_query_list = [w for w in sub_query_list if w]
+        sub_query_dict = {}
+        
+        if sub_query_list[0] == 'FROM':
+            
+            main_query.append('FROM')
+            sub_query_list.pop(0)
+            
+            sub_query_list_rev = sub_query_list[::-1]
+            
+            if sub_query_list_rev[0][-1] != ')':
+                alias = sub_query_list_rev[0]
+                sub_query_list.pop()
+                
+                if sub_query_list[-1] == 'AS':
+                    sub_query_list.pop()
+                
+            else:
+                alias = 'no alias'
+                
+            main_query.append(alias)
+            
+        elif sub_query_list[0].rstrip('\n ') not in ('FROM', 'CROSS'):
+            
+            join_ind = sub_query_list.index('JOIN')
+            main_query.extend(sub_query_list[:join_ind+1] )
+            del sub_query_list[:join_ind+1] 
+
+            sub_query_list_rev = sub_query_list[::-1]
+
+            try: 
+                on_ind = sub_query_list_rev.index('ON')
+                alias = sub_query_list_rev[on_ind+1]
+                main_part = sub_query_list_rev[:on_ind+2][::-1]
+                if sub_query_list_rev[on_ind+2] == 'AS':
+                    del sub_query_list_rev[:on_ind+3]
+                else:
+                    del sub_query_list_rev[:on_ind+2]
+                sub_query_list = sub_query_list_rev[::-1]
+                
+            except ValueError:
+                if sub_query_list_rev[0][-1] != ')':
+                    alias = sub_query_list_rev[0]
+                else:
+                    alias = 'no alias'
+            
+            main_query.extend(main_part)
+            
+        elif sub_query_list[0].rstrip('\n ') == 'CROSS':
+            
+            join_ind = sub_query_list.index('JOIN')
+            main_query.extend(sub_query_list[:join_ind+1] )
+            del sub_query_list[:join_ind+1] 
+
+            sub_query_list_rev = sub_query_list[::-1]
+            try:
+                as_ind = sub_query_list_rev.index('AS')
+                alias = sub_query_list_rev[as_ind-1]
+
+            except ValueError:
+                alias = sub_query_list_rev[0]
+            
+            main_query.append(alias)
+        
+        sub_query_dict[alias] = ' '.join(sub_query_list).lstrip('(').rstrip(')')
+        
+        return main_query, sub_query_dict
 
 
-    def extract_query_dict(self, query):
+    def _stitch_main(self, main_query, sub_query):
+        sub_query_dict = {}
+        if self.has_child(sub_query):
+            main_query, sub_query_dict = self._parse_alias(main_query, sub_query)
+        else:
+            main_query.append(sub_query)
+            
+        return main_query, sub_query_dict
 
+
+    def separator(self, copy_query_list, main_query):
+        sub_query_list_copy = copy_query_list
+        sub_query = 'abc'
+        sub_queries = []
+
+        while sub_query:
+            sub_join, sub_query_list_copy = self._divider(sub_query_list_copy)
+            sub_query = ' '.join(sub_join)
+            main_query, sub_query_dict = self._stitch_main(main_query, sub_query)
+            if sub_query_dict != {}: sub_queries.append(sub_query_dict)
+        
+        return ' '.join(main_query), sub_queries
+
+
+    def delevel(self, query):
         formatter = column_parser.Parser(query)
         formatted_query = formatter.format_query(query)
-        query_list_0 = formatted_query.split('\n')
-        query_dict = {}
+        query_list = formatted_query.split('\n')
 
-        sub_query = self.delevel(query_list_0)
-        query_dict = sub_query
+        main_query, copy_query_list = self.get_sub_query(query_list)
+        main_query, sub_queries = self.separator(copy_query_list, main_query)
+        
+        return main_query, sub_queries
 
-        for alias, query in sub_query.items():
 
-            formatter = column_parser.Parser(query)
-            formatted_query = formatter.format_query(query)
-            query_list = formatted_query.split('\n')
+    def restructure_subquery(self, query_dict, query_name, sub_query):
+        
+        main_query, sub_queries = self.delevel(sub_query)
+        query_dict[query_name] = main_query
 
-            if self.has_child(formatted_query) and alias != 'main':
-                sub_query_dict = self.delevel(query_list)
-                query_dict[alias] = sub_query_dict
-                query_dict = clean_dict(query_dict)
+        return query_dict, sub_queries
 
-            else:
-                pass
 
-        return query_dict
+def main():
+
+    query = open('../query.sql').read()
+
+    unbundled = Unbundle(query)
+
+    query_dict = {}
+    if unbundled.has_child(query):
+        query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'main', query)
+    else: 
+        query_dict['main'] = query
+            
+    for subq in sub_queries:
+        for k,v in subq.items():
+            query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
+
+    for subq in sub_queries:
+        for k,v in subq.items():
+            query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
+
+    return query_dict            
+    
+
+if __name__ == '__main__':
+    print(main())
