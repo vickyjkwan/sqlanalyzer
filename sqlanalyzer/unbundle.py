@@ -44,7 +44,7 @@ class Unbundle:
 
 
     def has_child(self, sub_query):
-        if not sub_query.startswith('WITH') and sub_query.count("SELECT") > 1:
+        if not sub_query.startswith('WITH') and sub_query.count("(SELECT") > 1:
             return True
         else: 
             return False
