@@ -8,10 +8,6 @@ def within(num, rng):
     else: return 0
 
 
-def is_cte(query):
-    return query.startswith('WITH')
-
-
 def clean_dict(query_dict):
 
     for k,v in query_dict.items(): 
@@ -48,7 +44,7 @@ class Unbundle:
 
 
     def has_child(self, sub_query):
-        if not sub_query.startswith('WITH') and sub_query.count("SELECT") > 1:
+        if not sub_query.startswith('WITH') and sub_query.count("(SELECT") > 1:
             return True
         else: 
             return False
