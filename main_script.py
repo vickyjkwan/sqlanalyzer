@@ -6,6 +6,29 @@ import pandas as pd
 import time
 
 
+def flatten_subquery(final_list, sub_queries, level_num):
+    for q in sub_queries:
+        for _,query in q.items():
+            formatter = column_parser.Parser(query)
+            formatted_query = formatter.format_query(query)
+            unbundled = unbundle.Unbundle(formatted_query)
+            query_dict = {}
+            if unbundled.has_child(formatted_query):
+                query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
+            else: 
+                sub_queries = []
+
+    if query_dict != {}:
+        final_list.append(query_dict)
+
+    for subq in sub_queries:
+        for _, sub_query in subq.items():
+            if not unbundled.has_child(sub_query): 
+                final_list.append(subq)
+    
+    return final_list, sub_queries
+
+
 def is_cte(query):
     return query.startswith('WITH')
 
@@ -28,7 +51,26 @@ def compile_queried_cols(query_dict, df):
     return all_cols
 
 
+def main():
+
+    query = open('queries/pure_nested.sql').read()
+
+    sub_queries = [{'query': query}]
+    final_list = []
+    i = 0
+
+    while sub_queries != []:
+        i += 1
+        final_list, sub_queries = flatten_subquery(final_list, sub_queries, level_num=i)
+
+
+    return final_list
+
+
 if __name__ == '__main__':
+
+    print(main())
+
     # need to audit `FROM a, b`: comma joins
     # 0.15 seconds 53 lines 
     # query = open('query.sql').read()
@@ -41,36 +83,36 @@ if __name__ == '__main__':
     #     .replace('{cloudfront_logs_china_dataset}', 'logs.cloudfront_logs_china')\
     #         .replace('{cloudfront_logs_china_to_global_proxy_dataset}', 'logs.cloudfront_logs_china_to_global_proxy')
                 
-    query = open('active_devs.sql').read()
+    # query = open('active_devs.sql').read()
 
-    t0 = time.perf_counter()
+    # t0 = time.perf_counter()
 
-    formatter = column_parser.Parser(query)
-    formatted_query = formatter.format_query(query)
-    query_list = formatted_query.split('\n')
+    # formatter = column_parser.Parser(query)
+    # formatted_query = formatter.format_query(query)
+    # query_list = formatted_query.split('\n')
 
-    unbundled = unbundle.Unbundle(query)
+    # unbundled = unbundle.Unbundle(query)
 
-    if is_cte(formatted_query):
-        cte_dict = formatter.parse_cte(formatted_query)
-        final_dict = {}
-        for alias, query in cte_dict.items():
-            formatter = column_parser.Parser(query)
-            formatted_query = formatter.format_query(query)
-            try:
-                final_dict[alias] = unbundled.extract_query_dict(formatted_query)
-            except:
-                final_dict[alias] = formatted_query
+    # if is_cte(formatted_query):
+    #     cte_dict = formatter.parse_cte(formatted_query)
+    #     final_dict = {}
+    #     for alias, query in cte_dict.items():
+    #         formatter = column_parser.Parser(query)
+    #         formatted_query = formatter.format_query(query)
+    #         try:
+    #             final_dict[alias] = unbundled.extract_query_dict(formatted_query)
+    #         except:
+    #             final_dict[alias] = formatted_query
 
-        with open('data.json', 'w') as outfile:
-            json.dump(final_dict, outfile)
+    #     with open('data.json', 'w') as outfile:
+    #         json.dump(final_dict, outfile)
 
-    else:
-        with open('data.json', 'w') as outfile:
-            json.dump(unbundled.extract_query_dict(query), outfile)
+    # else:
+    #     with open('data.json', 'w') as outfile:
+    #         json.dump(unbundled.extract_query_dict(query), outfile)
 
-    with open('./data.json', 'r') as f:
-        query_dict = json.load(f)
+    # with open('./data.json', 'r') as f:
+    #     query_dict = json.load(f)
 
     # db_fields_1 = pd.DataFrame({'db_table': 'mapbox_customer_data.accounts', 
     #         'all_columns': ['id', 'accountlevel', 'email', 'created', 'service_metadata_version', 'account', 'num_requests', 'dt', 'customerid']})

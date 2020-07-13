@@ -236,28 +236,28 @@ class Unbundle:
         return query_dict, sub_queries
 
 
-# def main():
+def flatten_subquery(final_list, sub_queries, level_num):
+    for q in sub_queries:
+        for k,query in q.items():
+            formatter = column_parser.Parser(query)
+            formatted_query = formatter.format_query(query)
+            unbundled = unbundle.Unbundle(formatted_query)
+            query_dict = {}
+            if unbundled.has_child(formatted_query):
+                query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
+            else: 
+                sub_queries = []
 
-#     query = open('../query.sql').read()
+    if query_dict != {}:
+        final_list.append(query_dict)
 
-#     unbundled = Unbundle(query)
-
-#     query_dict = {}
-#     if unbundled.has_child(query):
-#         query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'main', query)
-#     else: 
-#         query_dict['main'] = query
-            
-#     for subq in sub_queries:
-#         for k,v in subq.items():
-#             query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
-
-#     for subq in sub_queries:
-#         for k,v in subq.items():
-#             query_dict, sub_queries = unbundled.restructure_subquery(query_dict, k, v)
-
-#     return query_dict            
+    for subq in sub_queries:
+        for alias, sub_query in subq.items():
+            if not unbundled.has_child(sub_query): 
+                final_list.append(subq)
     
+    return final_list, sub_queries
+
 
 # if __name__ == '__main__':
 #     print(main())
