@@ -132,3 +132,4 @@ FROM
       LEFT JOIN mql_flag b ON a.event_email = b.email) custom_sql_query
    LIMIT 0) T
 LIMIT 0
+

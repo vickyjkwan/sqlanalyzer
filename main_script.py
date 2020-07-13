@@ -51,9 +51,7 @@ def compile_queried_cols(query_dict, df):
     return all_cols
 
 
-def main():
-
-    query = open('queries/pure_nested.sql').read()
+def flatten_pure_nested(query):
 
     sub_queries = [{'query': query}]
     final_list = []
@@ -63,13 +61,14 @@ def main():
         i += 1
         final_list, sub_queries = flatten_subquery(final_list, sub_queries, level_num=i)
 
-
     return final_list
 
 
 if __name__ == '__main__':
 
-    print(main())
+    query = open('queries/pure_nested.sql').read()
+
+    print(flatten_pure_nested(query))
 
     # need to audit `FROM a, b`: comma joins
     # 0.15 seconds 53 lines 
