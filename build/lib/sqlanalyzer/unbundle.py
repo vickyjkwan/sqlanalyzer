@@ -89,7 +89,7 @@ class Unbundle:
             main_query.extend(copy_query_list[pos_where:end_of_query])
             del copy_query_list[:main_pos]
             del copy_query_list[pos_where-main_pos:end_of_query-main_pos]
-            del copy_query_list[-(end_of_query - (pos_where-main_pos)):]
+            del copy_query_list[-(len(query_list) - end_of_query):]
             
         elif end_of_query < pos_where and pos_where == len(query_list):
         # when no WHERE, but GROUP BY/ORDER BY/LIMIT
