@@ -51,7 +51,7 @@ class Unbundle:
 
 
     def get_sub_query(self, query_list):
-        pos_delete, pos_where = [len(query_list)-1], len(query_list)
+        pos_delete, pos_where = [len(query_list)], len(query_list)
 
         for i, line in enumerate(query_list):
             if line.startswith('ORDER') or line.startswith('GROUP'):
@@ -60,37 +60,48 @@ class Unbundle:
                 pos_where = i
 
         end_of_query = min(pos_delete) 
-        
+
         copy_query_list = query_list.copy()
         main = next((s for s in copy_query_list if s.startswith('FROM')), 'end of query')
         main_pos = copy_query_list.index(main)
         main_query = copy_query_list[:main_pos]
 
-        if end_of_query == pos_where:
-        # when WHERE is the end of query, ie no more GROUP BY or ORDER BY
+        if end_of_query == pos_where and end_of_query < len(query_list):
+        # when one-line WHERE is the end of query, ie no more GROUP BY or ORDER BY
             main_query.extend(copy_query_list[pos_where:end_of_query+1])
             del copy_query_list[:main_pos]
-            del copy_query_list[end_of_query-1:]
-
-        elif end_of_query < pos_where and not copy_query_list[-1].startswith(' '):
-        # when there is no WHERE clause but GROUP BY and others
+            del copy_query_list[end_of_query-main_pos-1:]
+            
+        elif end_of_query == pos_where + 1:
+        # when there's more after one-line WHERE, eg GROUP BY/ORDER BY
             main_query.extend(copy_query_list[pos_where:end_of_query])
             del copy_query_list[:main_pos]
-            del copy_query_list[(end_of_query - main_pos):]
+            del copy_query_list[end_of_query-main_pos-1:]
 
-        elif end_of_query < pos_where and copy_query_list[-1].startswith(' '):
-        # when there is no WHERE clause and no GROUP BY or others
+        elif end_of_query > pos_where and end_of_query == len(query_list):
+        # when multi-line WHERE, no more GROUP BY or ORDER BY
             main_query.extend(copy_query_list[pos_where:end_of_query])
             del copy_query_list[:main_pos]
+            del copy_query_list[-(end_of_query-pos_where):]
         
-        elif end_of_query > pos_where:
-        # when there's more after WHERE, eg GROUP BY/ORDER BY
+        elif end_of_query > pos_where and end_of_query < len(query_list):
+        # when multi-line WHERE, followed by GROUP BY/ORDER BY
             main_query.extend(copy_query_list[pos_where:end_of_query])
             del copy_query_list[:main_pos]
+            del copy_query_list[pos_where-main_pos:end_of_query-main_pos]
+            del copy_query_list[-(end_of_query - (pos_where-main_pos)):]
+            
+        elif end_of_query < pos_where and pos_where == len(query_list):
+        # when no WHERE, but GROUP BY/ORDER BY/LIMIT
+            del copy_query_list[:main_pos]
             del copy_query_list[end_of_query-1:]
+        
+        elif end_of_query == pos_where and end_of_query == len(query_list):
+        # when no WHERE, no GROUP BY/ORDER BY/LIMIT
+            del copy_query_list[:main_pos]
         
         return main_query, copy_query_list
-            
+
 
     def _divider(self, copy_query_list):
         sub_join = []
