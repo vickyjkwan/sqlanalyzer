@@ -7,14 +7,18 @@ import time
 
 
 def flatten_subquery(final_list, sub_queries, level_num):
+    
     for q in sub_queries:
-        for _,query in q.items():
+        for alias,query in q.items():
             formatter = column_parser.Parser(query)
             formatted_query = formatter.format_query(query)
             unbundled = unbundle.Unbundle(formatted_query)
             query_dict = {}
             if unbundled.has_child(formatted_query):
-                query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
+                if alias == 'no alias' or alias == '' or alias == 'query':
+                    query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
+                else:
+                    query_dict, sub_queries = unbundled.restructure_subquery(query_dict, alias, formatted_query)
             else: 
                 sub_queries = []
 
@@ -33,22 +37,22 @@ def is_cte(query):
     return query.startswith('WITH')
 
 
-def extract_subquery_fields(query, db_fields):
-    formatter = column_parser.Parser(query)
-    formatted = formatter.format_query(query)
-    fields = formatter.match_queried_fields(formatted, db_fields)
-    return fields
+# def extract_subquery_fields(query, db_fields):
+#     formatter = column_parser.Parser(query)
+#     formatted = formatter.format_query(query)
+#     fields = formatter.match_queried_fields(formatted, db_fields)
+#     return fields
 
 
-def compile_queried_cols(query_dict, df):
-    all_cols = []
-    for _,v in query_dict.items():
-        if isinstance(v, dict):
-            for _,v1 in v.items():
-                all_cols.extend(extract_subquery_fields(v1, df))
-        else:
-            all_cols.extend(extract_subquery_fields(v, df))
-    return all_cols
+# def compile_queried_cols(query_dict, df):
+#     all_cols = []
+#     for _,v in query_dict.items():
+#         if isinstance(v, dict):
+#             for _,v1 in v.items():
+#                 all_cols.extend(extract_subquery_fields(v1, df))
+#         else:
+#             all_cols.extend(extract_subquery_fields(v, df))
+#     return all_cols
 
 
 def flatten_pure_nested(query):
