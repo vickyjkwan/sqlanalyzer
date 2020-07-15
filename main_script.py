@@ -14,7 +14,7 @@ def flatten_subquery(final_list, sub_queries, level_num):
             formatted_query = formatter.format_query(query)
             unbundled = unbundle.Unbundle(formatted_query)
             query_dict = {}
-            if unbundled.has_child(formatted_query):
+            if unbundled.has_child(query):
                 if alias == 'no alias' or alias == '' or alias == 'query':
                     query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
                 else:
@@ -22,14 +22,14 @@ def flatten_subquery(final_list, sub_queries, level_num):
             else: 
                 sub_queries = []
 
-    if query_dict != {}:
-        final_list.append(query_dict)
+        if query_dict != {}:
+            final_list.append(query_dict)
 
-    for subq in sub_queries:
-        for _, sub_query in subq.items():
-            if not unbundled.has_child(sub_query): 
-                final_list.append(subq)
-    
+        for subq in sub_queries:
+            for _, sub_query in subq.items():
+                if not unbundled.has_child(sub_query): 
+                    final_list.append(subq)
+
     return final_list, sub_queries
 
 
