@@ -173,8 +173,7 @@ def test_divider(unbundled, query_list):
                                                 "              AND event LIKE 'submitted_%form'",
                                                 '              AND context_traits_email IS NOT NULL ) d ON a.anonymous_id = d.anon_id_event)',
                                                 '      WHERE context_campaign_name IS NOT NULL )',
-                                                '   LIMIT 0) T',
-                                                'LIMIT 0']
+                                                '   LIMIT 0) T']
 
 
 def test_parse_alias(unbundled, main_query, sub_query):

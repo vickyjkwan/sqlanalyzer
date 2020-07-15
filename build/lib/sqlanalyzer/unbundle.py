@@ -120,8 +120,8 @@ class Unbundle:
                         break
                         
                     else:
-                        sub_join.extend(copy_query_list[:join_pos+1])
-                        del copy_query_list[:join_pos+1]
+                        sub_join.extend(copy_query_list[:join_pos])
+                        del copy_query_list[:join_pos]
                         break
         
                 except: 
