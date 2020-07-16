@@ -68,11 +68,11 @@ class Parser:
                     
                 cte_dict[cte_name] = cte_query[pos_list_removed[0]+1:]
 
-            cte_dict['main'] = query[pos_list_main[-1]:]
+            cte_dict['main_query'] = query[pos_list_main[-1]:]
             
         else:
             cte_dict = {}
-            cte_dict['main'] = query
+            cte_dict['main_query'] = query
 
         return cte_dict    
 

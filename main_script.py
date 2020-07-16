@@ -19,8 +19,8 @@ def flatten_subquery(final_list, sub_queries, level_num):
                     query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
                 else:
                     query_dict, sub_queries = unbundled.restructure_subquery(query_dict, alias, formatted_query)
-            else: 
-                sub_queries = []
+            # else: 
+            #     sub_queries = []
 
         if query_dict != {}:
             final_list.append(query_dict)
