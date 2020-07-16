@@ -34,6 +34,8 @@ def landmark(line):
         return True
     elif line.startswith('FULL OUTER JOIN'):
         return True
+    elif line.startswith('LATERAL VIEW'):
+        return True
     else: return False
 
 

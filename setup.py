@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(name='sqlanalyzer',
-      version='0.403',
+      version='0.4.4',
       description='A tool to parse and analyze the structure for Postgres sql queries.',
       classifiers=[
         'License :: OSI Approved :: MIT License',
