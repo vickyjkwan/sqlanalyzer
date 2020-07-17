@@ -1,9 +1,7 @@
 from sqlanalyzer import column_parser, unbundle
 import sqlparse
-import re
-import json
+import re, json, time, sys
 import pandas as pd
-import time
 
 
 def flatten_subquery(final_list, sub_queries, level_num):
@@ -19,8 +17,6 @@ def flatten_subquery(final_list, sub_queries, level_num):
                     query_dict, sub_queries = unbundled.restructure_subquery(query_dict, 'level_{}_main'.format(level_num), formatted_query)
                 else:
                     query_dict, sub_queries = unbundled.restructure_subquery(query_dict, alias, formatted_query)
-            # else: 
-            #     sub_queries = []
 
         if query_dict != {}:
             final_list.append(query_dict)
@@ -29,13 +25,73 @@ def flatten_subquery(final_list, sub_queries, level_num):
             for _, sub_query in subq.items():
                 if not unbundled.has_child(sub_query): 
                     final_list.append(subq)
+                    sub_queries.remove(subq)
 
     return final_list, sub_queries
 
 
-def is_cte(query):
-    return query.startswith('WITH')
+def flatten_pure_nested(query):
 
+    sub_queries = [{'query': query}]
+    final_list = []
+    i = 0
+
+    while sub_queries != []:
+        i += 1
+        final_list, sub_queries = flatten_subquery(final_list, sub_queries, level_num=i)
+
+    return final_list
+
+def flatten_cte_nested(unbundled, cte_dict):
+
+    cte_list = []
+
+    for cte_alias, cte_query in cte_dict.items():
+        if unbundled.has_child(cte_query):
+            cte_list.append({cte_alias: flatten_pure_nested(cte_query)})
+        else:
+            cte_list.append({cte_alias: cte_query})
+
+    return cte_list
+
+
+def parse_query(raw_query):
+
+    formatter = column_parser.Parser(raw_query)
+    formatted_query = formatter.format_query(raw_query)
+
+    if 'WITH' in formatted_query:
+        
+        if formatted_query.startswith('WITH'):
+
+            cte_dict = formatter.parse_cte(formatted_query)
+            unbundled = unbundle.Unbundle(formatted_query)
+            final_list = flatten_cte_nested(unbundled, cte_dict)
+        
+        else:
+            sub_query_list = flatten_pure_nested(formatted_query)
+            final_list = []
+            for q in sub_query_list: 
+
+                for alias, query in q.items():
+                    if 'WITH' in query:
+                        formatter = column_parser.Parser(query)
+                        formatted_query = formatter.format_query(query)
+
+                        cte_dict = formatter.parse_cte(formatted_query)
+                        unbundled = unbundle.Unbundle(formatted_query)
+
+                        cte_list = flatten_cte_nested(unbundled, cte_dict)
+                        final_list.append({alias: cte_list})
+
+                    else:
+                        final_list.append(q)
+
+    else:
+        final_list = flatten_pure_nested(raw_query)
+    
+    return final_list
+        
 
 # def extract_subquery_fields(query, db_fields):
 #     formatter = column_parser.Parser(query)
@@ -55,24 +111,12 @@ def is_cte(query):
 #     return all_cols
 
 
-def flatten_pure_nested(query):
-
-    sub_queries = [{'query': query}]
-    final_list = []
-    i = 0
-
-    while sub_queries != []:
-        i += 1
-        final_list, sub_queries = flatten_subquery(final_list, sub_queries, level_num=i)
-
-    return final_list
 
 
 if __name__ == '__main__':
 
-    query = open('queries/pure_nested.sql').read()
-
-    print(flatten_pure_nested(query))
+    raw_query = open('queries/{}.sql'.format(sys.argv[1])).read()
+    print(parse_query(raw_query))
 
     # need to audit `FROM a, b`: comma joins
     # 0.15 seconds 53 lines 
@@ -86,33 +130,8 @@ if __name__ == '__main__':
     #     .replace('{cloudfront_logs_china_dataset}', 'logs.cloudfront_logs_china')\
     #         .replace('{cloudfront_logs_china_to_global_proxy_dataset}', 'logs.cloudfront_logs_china_to_global_proxy')
                 
-    # query = open('active_devs.sql').read()
-
     # t0 = time.perf_counter()
 
-    # formatter = column_parser.Parser(query)
-    # formatted_query = formatter.format_query(query)
-    # query_list = formatted_query.split('\n')
-
-    # unbundled = unbundle.Unbundle(query)
-
-    # if is_cte(formatted_query):
-    #     cte_dict = formatter.parse_cte(formatted_query)
-    #     final_dict = {}
-    #     for alias, query in cte_dict.items():
-    #         formatter = column_parser.Parser(query)
-    #         formatted_query = formatter.format_query(query)
-    #         try:
-    #             final_dict[alias] = unbundled.extract_query_dict(formatted_query)
-    #         except:
-    #             final_dict[alias] = formatted_query
-
-    #     with open('data.json', 'w') as outfile:
-    #         json.dump(final_dict, outfile)
-
-    # else:
-    #     with open('data.json', 'w') as outfile:
-    #         json.dump(unbundled.extract_query_dict(query), outfile)
 
     # with open('./data.json', 'r') as f:
     #     query_dict = json.load(f)
