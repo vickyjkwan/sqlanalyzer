@@ -27,7 +27,7 @@ def test_parse_cte(sample_query, formatter):
     cte_dict = formatter.parse_cte(formatted_query)
 
     assert cte_dict == {'opportunity_to_name': "SELECT id AS account_id,\n          name AS account_name\n   FROM sfdc.accounts sfdc_accounts\n   WHERE dt = '{run_date}'\n   GROUP BY id,\n            name",
-                        'main': 'SELECT *\nFROM opportunity_to_name'}
+                        'main_query': 'SELECT *\nFROM opportunity_to_name'}
 
 
 def test_get_table_names(sample_query, formatter):
