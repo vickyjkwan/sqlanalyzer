@@ -49,7 +49,9 @@ LEFT JOIN accounts acct ON api.user_id = acct.customer_api_id
 >>> formatter = column_parser.Parser(query)
 >>> cte_query = formatter.parse_cte(query)
 >>> cte_query
-{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'", 'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts', 'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL\n'}
+{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'",
+'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts', 
+'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL\n'}
 >>> cte_query.keys()
 dict_keys(['a', 'b', 'main_query'])
 ```
@@ -66,7 +68,9 @@ dict_keys(['a', 'b', 'main_query'])
 >>> formatted = formatter.format_query(query)
 >>> table_alias_mapping = formatter.get_table_names(formatted.split('\n'))
 >>> table_alias_mapping
-{'m': 'api_requests.requests_by_account', 's': 'mapbox_customer_data.styles', 'u': 'sfdc.users'}
+{'m': 'api_requests.requests_by_account', 
+'s': 'mapbox_customer_data.styles', 
+'u': 'sfdc.users'}
 ```
 
 
@@ -121,7 +125,9 @@ dict_keys(['a', 'b', 'main_query'])
 ... """
 >>> analyzer = query_analyzer.Analyzer(query)
 >>> analyzer.parse_query(query)
-[{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'"}, {'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts'}, {'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL'}]
+[{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'"}, 
+{'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts'}, 
+{'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL'}]
 ```
 
 *c)* Parse mixed type of nested queries and CTE's:
@@ -153,7 +159,10 @@ dict_keys(['a', 'b', 'main_query'])
 ... """
 >>> analyzer = query_analyzer.Analyzer(query)
 >>> analyzer.parse_query(query)
-[{'level_1_main': "SELECT email,        COUNT(DISTINCT context_campaign_name) WHERE user_id IN ('123',                   '234',                   '345') FROM no alias "}, {'no alias': [{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'"}, {'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts'}, {'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL'}]}]
+[{'level_1_main': "SELECT email,        COUNT(DISTINCT context_campaign_name) WHERE user_id IN ('123',                   '234',                   '345') FROM no alias "}, 
+{'no alias': [{'a': "SELECT DISTINCT anonymous_id,\n                   user_id\n   FROM customer_data.segment_identifies\n   WHERE dt >= '2018-07-01'"}, 
+{'b': 'SELECT id,\n          email,\n          created\n   FROM customer_data.accounts'}, 
+{'main_query': 'SELECT a.*,\n       b.*\nFROM a\nLEFT JOIN b ON a.user_id = b.id\nWHERE context_campaign_name IS NOT NULL'}]}]
 ```
 
 
