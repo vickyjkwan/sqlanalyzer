@@ -1,4 +1,4 @@
-from sqlanalyzer import column_parser, unbundle
+from sqlanalyzer import column_parser, unbundle, query_analyzer
 import sqlparse
 import re, json, time, sys
 import pandas as pd
@@ -22,8 +22,11 @@ def compile_queried_cols(query_dict, df):
     return all_cols
 
 
-raw_query = open('queries/{}.sql'.format(sys.argv[1])).read()
-parse_query(raw_query)
+if __name__ == '__main__':
+    
+    raw_query = open('queries/{}.sql'.format(sys.argv[1])).read()
+    analyzer = query_analyzer.Analyzer(raw_query)
+    print(analyzer.parse_query(raw_query))
 
 
 # need to audit `FROM a, b`: comma joins
