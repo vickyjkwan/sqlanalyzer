@@ -19,6 +19,35 @@ def compile_queried_cols(query_dict, db_fields):
     return all_cols
 
 
+def unnest_query_list(query_list):
+    preprocess_list = []
+    
+    for q in query_list:
+        for _, query in q.items():
+            
+            if isinstance(query, str):
+                preprocess_list.append(query)
+            else:
+                
+                for sub_q in query:
+                    sub_list = []
+                    for _, sub_query in sub_q.items():
+                        
+                        if isinstance(sub_query, str):
+                            sub_list.append(sub_query)
+                            
+                        else:
+                            for sub_sub_q in sub_query:
+                                for _, sub_sub_query in sub_sub_q.items():
+                                    
+                                    if isinstance(sub_sub_query, str):
+                                        sub_list.append(sub_sub_query)
+                                        
+                    preprocess_list.extend(sub_list)
+                    
+    return preprocess_list
+
+
 if __name__ == '__main__':
     
     raw_query = open('queries/{}.sql'.format(sys.argv[1])).read()
