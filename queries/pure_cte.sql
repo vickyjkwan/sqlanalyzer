@@ -1,3 +1,4 @@
+-- audit: pass
 WITH reg_users AS
   (SELECT *
    FROM

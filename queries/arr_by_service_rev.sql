@@ -1,3 +1,5 @@
+-- audit: not pass
+
 WITH opportunity_product_rev AS
   (SELECT opportunity_id,
           op.product_2_id, p.name AS product_name,
