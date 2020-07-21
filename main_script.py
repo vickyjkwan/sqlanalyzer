@@ -11,14 +11,11 @@ def extract_subquery_fields(query, db_fields):
     return fields
 
 
-def compile_queried_cols(query_dict, df):
+def compile_queried_cols(query_dict, db_fields):
     all_cols = []
-    for _,v in query_dict.items():
-        if isinstance(v, dict):
-            for _,v1 in v.items():
-                all_cols.extend(extract_subquery_fields(v1, df))
-        else:
-            all_cols.extend(extract_subquery_fields(v, df))
+    for q in query_dict:
+        for _, query in q.items():
+            all_cols.extend(extract_subquery_fields(query, db_fields))
     return all_cols
 
 
@@ -26,8 +23,22 @@ if __name__ == '__main__':
     
     raw_query = open('queries/{}.sql'.format(sys.argv[1])).read()
     analyzer = query_analyzer.Analyzer(raw_query)
-    print(analyzer.parse_query(raw_query))
+    query_dict = analyzer.parse_query(raw_query)
 
+    db_fields_1 = pd.DataFrame({'db_table': 'wbr.map_requests_by_account', 
+            'all_columns': ['platform', 'mobile_os', 'service', 'service_metadata', 'service_metadata_version', 'account', 'num_requests', 'dt']})
+    db_fields_2 = pd.DataFrame({'db_table': 'mapbox_customer_data.styles', 
+            'all_columns': ['id', 'owner', 'metadata', 'sources']})
+    db_fields_3 = pd.DataFrame({'db_table': 'sfdc.accounts', 
+            'all_columns': ['dt', 'customer_tier_c', 'csm_c', 'name', 'mapbox_username_c', 'x18_digit_account_id_c']})
+    db_fields_4 = pd.DataFrame({'db_table': 'sfdc.users', 
+            'all_columns': ['dt', 'name', 'id']})
+    df = db_fields_1.append(db_fields_2, ignore_index=True)
+    df = df.append(db_fields_3, ignore_index=True)
+    df = df.append(db_fields_4, ignore_index=True)
+    db_fields = df
+
+    print(compile_queried_cols(query_dict, db_fields))
 
 # need to audit `FROM a, b`: comma joins
 # 0.15 seconds 53 lines 
