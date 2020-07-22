@@ -236,9 +236,10 @@ class Parser:
 
                             if k == db_table and var_split[2] in v[0]:
                                 original_columns_list.append("{}.{}".format(k, var_split[2]))
+
                             elif k == db_table and var_split[2] == '*':
                                 for col in v[0]:
-                                    original_columns_list.append("{}.{}".format(k, col))   
+                                    original_columns_list.extend("{}.{}".format(k, col))   
 
         return list(set(original_columns_list))
             
