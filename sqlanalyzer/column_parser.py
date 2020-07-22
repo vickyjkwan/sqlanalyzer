@@ -186,7 +186,7 @@ class Parser:
         for _,table_name in table_names.items():
 
             if len(table_name.split('.')) == 2:
-                queried_cols.append({table_name: set(meta_cols.filter(meta_cols['db_table']==table_name).select('all_columns').collect()[0])})
+                queried_cols.append({table_name: meta_cols.filter(meta_cols['db_table']==table_name).select('all_columns').collect()[0]})
 
         return queried_cols
             
