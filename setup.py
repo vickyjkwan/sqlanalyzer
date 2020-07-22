@@ -6,7 +6,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 setuptools.setup(name='sqlanalyzer',
-      version='0.4.9',
+      version='0.5.0',
       description='A tool to parse and analyze the structure for Postgres sql queries.',
       classifiers=[
         'License :: OSI Approved :: MIT License',
