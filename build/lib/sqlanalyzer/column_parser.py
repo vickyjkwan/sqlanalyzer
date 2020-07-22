@@ -217,7 +217,7 @@ class Parser:
                     if var_split[0] == '*':
                         for db_table in queried_cols:
                             for k,v in db_table.items():
-                                for col in v:
+                                for col in v[0]:
                                     original_columns_list.append("{}.{}".format(k, col))
                         
                     else:
