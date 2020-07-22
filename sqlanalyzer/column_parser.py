@@ -128,14 +128,25 @@ class Parser:
             list: A list of all variables within the query.
         """
         all_variables = []
-
         for e in query.split('\n'):
+
             if sum(list(map(lambda x: '*' in x, re.findall(r"([a-z].*[*])", e)))):
-                variable = re.findall(r"([a-z].*[*])", e)
+                
+                if re.findall(r"(SELECT)", e) == [] and re.findall(r"([A-Z]+)", e) != []:
+                    variable = [x.strip(' ') for x in re.findall(r"[a-z0-9_\s.]+", e)] 
+                else:
+                    variable = re.findall(r"([a-z].*[*])", e)
+                
             elif sum(list(map(lambda x: '*' in x, re.findall(r"([*])", e)))):
-                variable = re.findall(r"([*])", e)
+            
+                if re.findall(r"(SELECT)", e) == [] and re.findall(r"([A-Z]+)", e) != []:
+                    variable = [x.strip(' ') for x in re.findall(r"[a-z0-9_\s.]+", e)] 
+                    
+                else:
+                    variable = re.findall(r"([*])", e)
+                
             else:
-                variable = [x.strip(' ') for x in re.findall(r"[a-z_\s.]+", e)]
+                variable = [x.strip(' ') for x in re.findall(r"[a-z0-9_\s.]+", e)]
 
             all_variables.extend(variable)
 
