@@ -192,15 +192,15 @@ class Parser:
             
 
     def _map_db_columns(self, var_list, queried_cols, table_alias_mapping):
-    """
-    Map database columns.
-    Args:
-        var_list (list): The list of all variables (non-sql reserved words) in query.
-        queried_cols (list): The list of all currently existing columns in Glue, under the table that was being queried. 
-        table_alias_mapping (dict): The mapping of table and their (if) alias.
-    Returns:
-        list: A list of unique db.table.column that was being scanned by the query.
-    """
+        """
+        Map database columns.
+        Args:
+            var_list (list): The list of all variables (non-sql reserved words) in query.
+            queried_cols (list): The list of all currently existing columns in Glue, under the table that was being queried. 
+            table_alias_mapping (dict): The mapping of table and their (if) alias.
+        Returns:
+            list: A list of unique db.table.column that was being scanned by the query.
+        """
         original_columns_list = []
 
         for var in set(var_list):

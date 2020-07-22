@@ -192,6 +192,46 @@ class Parser:
             
 
     def _map_db_columns(self, var_list, queried_cols, table_alias_mapping):
+    """
+    Map database columns.
+    Args:
+        var_list (list): The list of all variables (non-sql reserved words) in query.
+        queried_cols (list): The list of all currently existing columns in Glue, under the table that was being queried. 
+        table_alias_mapping (dict): The mapping of table and their (if) alias.
+    Returns:
+        list: A list of unique db.table.column that was being scanned by the query.
+    """
+        original_columns_list = []
+
+        for var in set(var_list):
+
+            var = var.strip(' ')
+
+            if var in table_alias_mapping.keys():
+                pass
+            
+            else:
+                var_split = var.split('.')
+            
+                if len(var_split) == 1:
+                    for db_table in queried_cols:
+                        for k,v in db_table.items():
+                            if var in v:
+                                original_columns_list.append("{}.{}".format(k, var))
+
+                elif len(var_split) == 2:
+
+                    if var_split[0] in table_alias_mapping.keys():
+                        db_table = table_alias_mapping[var_split[0]]
+
+                        for db_table_col in queried_cols:
+                            for k,v in db_table_col.items():
+                                if k == db_table and var_split[1] in v:
+                                    original_columns_list.append("{}.{}".format(k, var_split[1]))
+
+        return list(set(original_columns_list))        
+
+    def _map_db_columns_spark(self, var_list, queried_cols, table_alias_mapping):
         """
         Map database columns.
         Args:
@@ -303,7 +343,7 @@ class Parser:
                         for t in v:
                             original_columns_list.append("{}.{}".format(k,t))
             else:
-                original_columns_list = self._map_db_columns(variables, queried_columns, table_alias_mapping)
+                original_columns_list = self._map_db_columns_spark(variables, queried_columns, table_alias_mapping)
             all_columns_scanned.extend(list(set(original_columns_list)))
 
         return all_columns_scanned
