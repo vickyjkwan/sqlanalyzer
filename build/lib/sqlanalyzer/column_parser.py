@@ -172,7 +172,7 @@ class Parser:
         return queried_cols
 
 
-    def _get_queried_columns_sprak(self, table_names, meta_cols):
+    def _get_queried_columns_spark(self, table_names, meta_cols):
         """
         Get all columns by looking up referenced Spark table names in the metacolumn file.
         Args:
