@@ -231,22 +231,22 @@ class Parser:
                     if '.'.join(var_split[:2]) in table_alias_mapping.keys():
                         db_table = '.'.join(var_split[:2])
             
-                    for db_table_col in queried_cols:
-                        for k,v in db_table_col.items():
+                        for db_table_col in queried_cols:
+                            for k,v in db_table_col.items():
 
-                            if k == db_table and var_split[2] in v[0]:
-                                original_columns_list.append("{}.{}".format(k, var_split[2]))
+                                if k == db_table and var_split[2] in v[0]:
+                                    original_columns_list.append("{}.{}".format(k, var_split[2]))
 
-                            elif k == db_table and var_split[2] == '*':
-                                for col in v[0]:
-                                    original_columns_list.extend("{}.{}".format(k, col))   
+                                elif k == db_table and var_split[2] == '*':
+                                    for col in v[0]:
+                                        original_columns_list.extend("{}.{}".format(k, col))   
                 
-                elif var_split[0] in table_alias_mapping.keys():
-                    db_table = table_alias_mapping[var_split[0]]
-                    for db_table_col in queried_cols:
-                        for k,v in db_table_col.items():
-                            if k == db_table and var_split[1] in v[0]:
-                                original_columns_list.append("{}.{}".format(k, var_split[1]))
+                    elif var_split[0] in table_alias_mapping.keys():
+                        db_table = table_alias_mapping[var_split[0]]
+                        for db_table_col in queried_cols:
+                            for k,v in db_table_col.items():
+                                if k == db_table and var_split[1] in v[0]:
+                                    original_columns_list.append("{}.{}".format(k, var_split[1]))
 
         return list(set(original_columns_list))
             
