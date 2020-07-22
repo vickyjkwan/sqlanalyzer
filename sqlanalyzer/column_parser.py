@@ -285,8 +285,13 @@ class Parser:
                         db_table = table_alias_mapping[var_split[0]]
                         for db_table_col in queried_cols:
                             for k,v in db_table_col.items():
+
                                 if k == db_table and var_split[1] in v[0]:
                                     original_columns_list.append("{}.{}".format(k, var_split[1]))
+                                    
+                                elif k == db_table and var_split[1] == '*':
+                                    for col in v[0]:
+                                        original_columns_list.append("{}.{}".format(k, col))
 
         return list(set(original_columns_list))
             
