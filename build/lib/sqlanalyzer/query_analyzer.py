@@ -1,7 +1,6 @@
 from sqlanalyzer import column_parser, unbundle
 import sqlparse
 import re, json, time, sys
-import pandas as pd
 
 class Analyzer:
 
