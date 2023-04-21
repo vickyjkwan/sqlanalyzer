@@ -20,7 +20,7 @@ setuptools.setup(name='sqlanalyzer',
       long_description=long_description,
       long_description_content_type='text/markdown',
       packages=['sqlanalyzer'],
-      install_requires=['sqlparse==0.3.0'],
+      install_requires=['sqlparse==0.4.4'],
       python_requires='>=3.5',
       zip_safe=False)
       
