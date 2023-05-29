@@ -13,6 +13,17 @@ def sample_query():
 
 
 @pytest.fixture
+def sample_query_diff_dbs():
+    query = """
+        SELECT * 
+        from `some_database.schema.table`
+        INNER JOIN some_schema.some_table
+        WHERE column IS NULL
+    """
+    return query
+
+
+@pytest.fixture
 def formatter(sample_query):
     formatter = column_parser.Parser(sample_query)
     return formatter
@@ -36,3 +47,13 @@ def test_get_table_names(sample_query, formatter):
 
     assert table_name_mapping == {'sfdc_accounts': 'sfdc.accounts',
                                     'opportunity_to_name': 'opportunity_to_name'}
+
+
+def test_get_table_names_diff_dbs(sample_query_diff_dbs):
+    formatter = column_parser.Parser(sample_query_diff_dbs)
+    formatted_query = formatter.format_query(sample_query_diff_dbs)
+    table_name_mapping = formatter.get_table_names(formatted_query.split('\n'))
+
+    assert table_name_mapping == {'`some_database.schema.table`': '`some_database.schema.table`',
+                                    'some_schema.some_table': 'some_schema.some_table'}
+   
