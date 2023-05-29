@@ -49,7 +49,8 @@ def test_get_table_names(sample_query, formatter):
                                     'opportunity_to_name': 'opportunity_to_name'}
 
 
-def test_get_table_names_diff_dbs(sample_query_diff_dbs, formatter):
+def test_get_table_names_diff_dbs(sample_query_diff_dbs):
+    formatter = column_parser.Parser(sample_query_diff_dbs)
     formatted_query = formatter.format_query(sample_query_diff_dbs)
     table_name_mapping = formatter.get_table_names(formatted_query.split('\n'))
 
