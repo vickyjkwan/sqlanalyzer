@@ -56,4 +56,4 @@ def test_get_table_names_diff_dbs(sample_query_diff_dbs, formatter):
     assert table_name_mapping == {'`some_database.schema.table`': '`some_database.schema.table`',
                                     'some_schema.some_table': 'some_schema.some_table'}
 
-   
+  
