@@ -99,7 +99,7 @@ class Parser:
 
         for line in line_query:
             
-            table_line = re.findall(r"(FROM|JOIN).(\w*`?.*)", line)
+            table_line = re.findall(r"(?i)(FROM|JOIN).(\w*`?.*)", line)
 
             if table_line != []:
                 table_name_line = table_line[0][1].split(' ')
